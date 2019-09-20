@@ -43,7 +43,7 @@ module ResultFileFunctions
 	return firstResult
 	end
 
-	function loadResults(filename; useAveragesOnly = false, raw = false, startTime::DateTime = DateTime(0), endTime::DateTime = DateTime(3000), massesToLoad=Array{Float64,1}(), massMatchTolerance = 0.00001)
+	function loadResults(filename; useAveragesOnly = false, raw = false, startTime::DateTime = DateTime(0), endTime::DateTime = DateTime(3000), massesToLoad=Array{Float64,1}(), massMatchTolerance = 0.00001, masslistOnly = false)
 	    println("Loading Times:")
 	  if useAveragesOnly
 	    timesUnix = HDF5.h5read(filename, "AvgStickCpsTimes")
@@ -82,6 +82,10 @@ module ResultFileFunctions
 	  masslistMasses = HDF5.h5read(filename, "MassList")
 	  masslistElements = HDF5.h5read(filename, "ElementNames")
 	  masslistElementsMasses = HDF5.h5read(filename, "ElementMasses")
+
+	  if masslistOnly
+		  return MeasurementResult(Dates.unix2datetime.(timesUnix), masslistMasses, masslistElements, masslistElementsMasses, masslistCompositions, Array{Float64}(undef,0,0))
+	  end
 
 	  if length(massesToLoad) > 0
 	      selectionMassesIndices = Array{Int,1}()
@@ -276,7 +280,6 @@ module ResultFileFunctions
 	  close(fh)
 	  GC.gc()
 	end
-
 
 
 	function getTraceSamples(filename, indices; raw=false)

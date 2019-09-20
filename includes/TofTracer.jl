@@ -250,6 +250,7 @@ module ExportFunctions
 	  close(f)
 	end
 
+	################ EXAMPLE from Matlab: 737551.673515479 should be 06-May-2019 16:09:51 #############
 	function toMatlabTime(t::Dates.DateTime)
 	    timespan = ((t+Dates.Day(1)) - Dates.DateTime(0,1,1,0,0,0))
 	    millis::Float64 = Dates.value(timespan)
@@ -259,7 +260,7 @@ module ExportFunctions
 	function fromMatlabTime(timestamp::Number)
 	    days=Int(floor(timestamp))
 	    millisecondsRemainder = Int(round((timestamp-days)*24*3600*1000))
-	    return Dates.DateTime(1,1,1,0,0,0)+Dates.Day(days-1)+Dates.Millisecond(millisecondsRemainder)#+Dates.Year(1)
+	    return Dates.DateTime(0,1,1,0,0,0)+Dates.Day(days)+Dates.Millisecond(millisecondsRemainder)-Dates.Day(1)
 	end
 
 end
