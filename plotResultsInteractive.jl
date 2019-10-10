@@ -9,7 +9,7 @@ import  .MasslistFunctions
 import .ResultFileFunctions
 
 
-file = "/dataFast/HYYDE2016Data/running2/calibs/results/_result.hdf5"
+file = "ExampleFiles/TOFDATA/results/_result.hdf5"
 availableTraces = ResultFileFunctions.loadResults(file,masslistOnly=true)
 linewidth = 2
 
