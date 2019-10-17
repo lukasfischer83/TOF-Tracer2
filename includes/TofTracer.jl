@@ -16,12 +16,12 @@ module PlotFunctions
 	  for i=1:length(masses)
 	    m = masses[i]
 	    adduct = h2o
-	    if (inCompositions(compositions[:,i] + adduct[4], compositions))
+	    if (MasslistFunctions.inCompositions(compositions[:,i] + adduct[4], compositions))
 	      m1 = m + adduct[1]
 	      plot([m, m1], [m-round(m), m1 - round(m1)], color="lightblue", zorder=1)
 	    end
 	    adduct = o
-	    if (inCompositions(compositions[:,i] + adduct[4], compositions))
+	    if (MasslistFunctions.inCompositions(compositions[:,i] + adduct[4], compositions))
 	      m1 = m + adduct[1]
 	      plot([m, m1], [m-round(m), m1 - round(m1)], color="red", zorder=1)
 	    end
