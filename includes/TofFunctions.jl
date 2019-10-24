@@ -12,7 +12,7 @@ module TOFFunctions
 	SPEC_CACHE_SIZE_LIMIT = 5e8
 
 
-	export mass2timebin, timebin2mass, getMassCalibParametersFromFile, getSubSpectraCount, getSubSpectrumFromFile, getSpecMultiplicator, getSubSpectrumTimeFromFile, getAvgSpectrumFromFile, getTimeFromFile, validateHDF5Files, setMassScaleReferenceSpectrum, recalibrateMassScale
+	export clearCache, mass2timebin, timebin2mass, getMassCalibParametersFromFile, getSubSpectraCount, getSubSpectrumFromFile, getSpecMultiplicator, getSubSpectrumTimeFromFile, getAvgSpectrumFromFile, getTimeFromFile, validateHDF5Files, setMassScaleReferenceSpectrum, recalibrateMassScale
 
 	debuglevel = 3
 
@@ -26,6 +26,12 @@ module TOFFunctions
 	timeCache = h5cache("",0,0)
 	spectraCache = h5cache("",0,0)
 
+	function clearCache()
+		timeCache = h5cache("",0,0)
+		spectraCache = h5cache("",0,0)
+	end
+
+	
 
 	function mass2timebin(mass::Number,mode,parameters)
 	  if mode == 0

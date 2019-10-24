@@ -417,4 +417,7 @@ function correctMassScaleAndExtractSumSpec(
   [compFlat[:,i]=masslistCompositions[i] for i=1:length(masslistCompositions)]
   HDF5.h5write(outfilepath, "ElementalCompositions", compFlat)
 
+  ###### free some mem #######
+  TOFFunctions.clearCache()
+  
 end
