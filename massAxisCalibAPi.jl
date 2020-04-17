@@ -20,6 +20,7 @@ ax1 = fig.add_subplot(2,1,1);
 semilogy(rawMassAxis,avgSpectrum)
 xlabel("m/z [Th]")
 ylabel("intensity [a.u.]")
+title("To get the timebin interval of the desired peaks for mass axis calibration:\n click left and right of each peak in the lower panel.")
 ax2 = fig.add_subplot(2,1,2);
 semilogy(timebins,avgSpectrum)
 xlabel("time bin [#]")
@@ -29,14 +30,16 @@ ylabel("intensity [a.u.]")
 using LsqFit
 @. model(x, p) = p[1]*exp((x-p[2])^2/p[3]) # Gaussian distribution
 #@. model(x, p) = p[1]/(p[1]^2 + (x-p[2])^2 ) # Lorentzian distribution, p[1]>0, -inf<p[2]<inf
+massCalCompounds = [37.028406, 55.038971, 282.118343]
 
-# select timebin intervals for mass axis calibration
+# select TIMEBIN intervals for mass axis calibration
 # -> click left and right of each peak to get the interval
-nSteps = 3 # number of peaks for mass axis calibration
+nSteps = length(massCalCompounds) # number of peaks for mass axis calibration
 gdata = Array{Float32}(undef,(2*nSteps),1)
 for i =1:2*nSteps
     gin = ginput()
     gdata[i] = gin[1][1]
+    ax2.plot([gdata[i], gdata[i]], [minimum(avgSpectrum), maximum(avgSpectrum)],"r-.")
 end
 # find interval indices
 maxPeakVal = Any[]
@@ -64,10 +67,9 @@ for l=1:1
     #return specInt, idxSpecInt, fit, maxPeakVal
 end
 # 3-params
-massCompounds = [31.989281, 59.049141, 371.101233]# [61.9884, 124.984, 165.999] # [37.028406, 55.038971, 102.12773, 282.118343] # 73.049535,
 @. model_tb2m(x, p) = ((x-p[2])/p[1])^(1/p[3])
 p0_tb2m = [15000.0, -60000.0, 0.5] # [minimum(maxPeakVal)/1.4,maximum(maxPeakVal)]
-fit_tb2m = LsqFit.curve_fit(model_tb2m, maxPeakVal, massCompounds, p0_tb2m ) # , p0_bounds, lower=lb, upper=ub)
+fit_tb2m = LsqFit.curve_fit(model_tb2m, maxPeakVal, massCalCompounds, p0_tb2m ) # , p0_bounds, lower=lb, upper=ub)
 tb2m = ((timebins.-fit_tb2m.param[2]) ./fit_tb2m.param[1]).^(1/fit_tb2m.param[3])
 ### plot result
 figure(figsize=(12,8));
