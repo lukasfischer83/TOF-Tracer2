@@ -71,7 +71,7 @@ function deconvolute(
 
   print("Reconstructing Spectrum for visual check...")
 
-  PyPlot.semilogy(massAxis,totalAvgSpectrum, "-o", label="Original", color="r")
+  PyPlot.plot(massAxis,totalAvgSpectrum, "-o", label="Original", color="r")
   #reconstructedSpectrum = reconstructSpectrum(massAxis, masses[(masses.>158) & (masses.<162)], masslistElements, compositions[:,(masses.>158) & (masses.<162)], counts[(masses.>158) & (masses.<162)], peakShapesCenterMass, peakShapesY)
   reconstructedSpectrum = MultipeakFunctions.reconstructSpectrum(massAxis, massScaleMode, massScaleParameters, masses, compositions, counts, peakShapesCenterMass, peakShapesY)
 
@@ -102,15 +102,15 @@ function deconvolute(
 
   fh = HDF5.h5open(file,"r+")
 
-  if HDF5.exists(fh, "CorrStickCps")
+  if Base.haskey(fh, "CorrStickCps")
   HDF5.o_delete(fh,"CorrStickCps")
   end
 
-  if HDF5.exists(fh, "CorrStickCpsErrors")
+  if Base.haskey(fh, "CorrStickCpsErrors")
   HDF5.o_delete(fh,"CorrStickCpsErrors")
   end
 
-  if HDF5.exists(fh, "StickCps")
+  if Base.haskey(fh, "StickCps")
     haveStickCps = true
 
     # Create empty Dataspace
@@ -146,7 +146,7 @@ function deconvolute(
   end
 
   fh = HDF5.h5open(file,"r+")
-  if HDF5.exists(fh, "AvgStickCps")
+  if Base.haskey(fh, "AvgStickCps")
 
     traces = HDF5.h5read(file, "AvgStickCps")[:,selector]
     tracesErrors = similar(traces)
@@ -156,10 +156,10 @@ function deconvolute(
       #tracesErrors[i,:] = abs(deconvolutionMatrix) * sqrt(abs(traces[i,:])/3600)
   end
 
-  if HDF5.exists(fh, "CorrAvgStickCps")
+  if Base.haskey(fh, "CorrAvgStickCps")
   HDF5.o_delete(fh,"CorrAvgStickCps")
   end
-  if HDF5.exists(fh, "CorrAvgStickCpsErrors")
+  if Base.haskey(fh, "CorrAvgStickCpsErrors")
   HDF5.o_delete(fh,"CorrAvgStickCpsErrors")
   end
   HDF5.h5write(file, "CorrAvgStickCps", traces)

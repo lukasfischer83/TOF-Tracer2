@@ -40,16 +40,16 @@ function baselineAndPeakshape(
 
   ############ delete h5 data that will be overwritten ###########
   fh = HDF5.h5open(file,"r+")
-  if HDF5.exists(fh, "AvgBaseline")
+  if Base.haskey(fh, "AvgBaseline")
     HDF5.o_delete(fh,"AvgBaseline")
   end
-  if HDF5.exists(fh, "MassDepPeakshape")
+  if Base.haskey(fh, "MassDepPeakshape")
   HDF5.o_delete(fh,"MassDepPeakshape")
   end
-  if HDF5.exists(fh, "MassDepPeakshapeCenterMasses")
+  if Base.haskey(fh, "MassDepPeakshapeCenterMasses")
   HDF5.o_delete(fh,"MassDepPeakshapeCenterMasses")
   end
-  if HDF5.exists(fh, "BaseLines")
+  if Base.haskey(fh, "BaseLines")
   HDF5.o_delete(fh,"BaseLines")
   end
   HDF5.close(fh)
