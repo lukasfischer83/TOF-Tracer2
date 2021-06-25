@@ -89,7 +89,7 @@ module MasslistFunctions
 		    possibleH = masslistPos(round(nC/2)*2-4):2:2*nC+2+nN*3
 		  end
 		  if (isodd(nN))
-		    possibleH = possibleH + 1
+		    possibleH = possibleH .+ 1 # "." was missing!
 		  end
 		  for nH in possibleH
 		    append!(masses,nS*massS+nC*massC+nN*massN+nO*massO+nH*massH+nHplus*massHplus)
@@ -322,4 +322,3 @@ module MasslistFunctions
 	end
 
 end
-
