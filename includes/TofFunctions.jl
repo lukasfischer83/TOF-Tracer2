@@ -31,7 +31,7 @@ module TOFFunctions
 		spectraCache = h5cache("",0,0)
 	end
 
-
+	
 
 	function mass2timebin(mass::Number,mode,parameters)
 	  if mode == 0
@@ -99,7 +99,7 @@ module TOFFunctions
 	  #println("Getting avg spectrum from $filename")
 	  attributesRoot = HDF5.h5readattr(filename, "/")
 	  attributesFullSpectra = HDF5.h5readattr(filename, "/FullSpectra")
-
+	  
 	  H5NbrWrites = Float32.(attributesRoot["NbrWrites"])
 	  H5NbrBufs = Float32.(attributesRoot["NbrBufs"])
 	  H5NbrWaveForms = Float32.(attributesRoot["NbrWaveforms"])
@@ -230,21 +230,10 @@ module TOFFunctions
 
 	function getTimeFromFile(filename)
 
-	    # time_windowsTimestamp = HDF5.h5read(filename, "/AcquisitionLog/Log")[1].data[1]
-	    # tUnix = time_windowsTimestamp/(10.0*1000.0*1000.0)-11644473600.0
-	    # #println("tUnix has size $(size(tUnix))")
-	    # t = Dates.unix2datetime(tUnix)#[1]
-	    # # 2021.06.25: newest h5read version doesnt understand the timestamp format
-	    attributesRoot = HDF5.h5readattr(filename, "/")
-	    time_s = attributesRoot["HDF5 File Creation Time"]
-	    acq_card = attributesRoot["DAQ Hardware"]
-	    #println(acq_card)
-	    if (acq_card == "Cronologic HPTDC8-PCI")
-	      t = DateTime(time_s, "m/d/y H:M:S") # STOF
-	    else
-	      t = DateTime(time_s, "d/m/y H:M:S") # PTR3
-	    end
-	    #
+	    time_windowsTimestamp = HDF5.h5read(filename, "/AcquisitionLog/Log")[1][1]
+	    tUnix = time_windowsTimestamp/(10.0*1000.0*1000.0)-11644473600.0
+	    #println("tUnix has size $(size(tUnix))")
+	    t = Dates.unix2datetime(tUnix)#[1]
 	    return t
 	end
 
@@ -388,6 +377,7 @@ module TOFFunctions
 	    else
 	      timebinshifts[regionindex] = 0
 	      intensities[regionindex] = 0
+
 	    end
 	    if debuglevel > 2   println("Mass $region found shifted by $shift timebins with correlation coeff $(intensity)") end
 	    if (intensity < 0.05)

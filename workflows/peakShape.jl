@@ -33,24 +33,17 @@ function baselineAndPeakshape(
   PyPlot.figure()
   PyPlot.title("Baseline Correction")
   PyPlot.semilogy(baselinePoints,baselineValues,".-")
-   PyPlot.semilogy(baselinePoints,baselineValues + baselineNoise,".")
+  PyPlot.semilogy(baselinePoints,baselineValues + baselineNoise,".")
   #semilogy(peakMasses, peakValues, "x")
-   PyPlot.semilogy(massAxis,avgSpectrum)
+  PyPlot.semilogy(massAxis,avgSpectrum)
 
 
   ############ delete h5 data that will be overwritten ###########
   fh = HDF5.h5open(file,"r+")
-  if Base.haskey(fh, "AvgBaseline")
-    HDF5.o_delete(fh,"AvgBaseline")
-  end
-  if Base.haskey(fh, "MassDepPeakshape")
-  HDF5.o_delete(fh,"MassDepPeakshape")
-  end
-  if Base.haskey(fh, "MassDepPeakshapeCenterMasses")
-  HDF5.o_delete(fh,"MassDepPeakshapeCenterMasses")
-  end
-  if Base.haskey(fh, "BaseLines")
-  HDF5.o_delete(fh,"BaseLines")
+  for attr in ["AvgBaseline", "MassDepPeakshape", "MassDepPeakshapeCenterMasses", "BaseLines"]
+    if haskey(fh, attr)
+      HDF5.delete_attribute(fh,attr)
+    end
   end
   HDF5.close(fh)
 

@@ -131,7 +131,7 @@ module ResultFileFunctions
 	  println("Loaded $(size(traces)) traces")
 	  return MeasurementResult(selectedTimes, selectedMasslistMasses, masslistElements, masslistElementsMasses, selectedMassesCompositions, traces)
 	end
-
+###########################MeasurementResult end #########################
 
 	function getIndicesInTimeframe(filename, startTime::DateTime, endTime::DateTime)
 	  times = HDF5.h5read(filename, "Times")
@@ -153,12 +153,12 @@ module ResultFileFunctions
 	      ds = fh["StickCps"]
 	    else
 	      ds = fh["CorrStickCps"]
-	      if HDF5.exists(fh, "CorrStickCpsT")
-		  dsTexists = true
-		  println("A transposed dataset for faster loading is available.")
-		  dsT = fh["CorrStickCpsT"]
+	      if haskey(fh, "CorrStickCpsT")
+		  	dsTexists = true
+		  	println("A transposed dataset for faster loading is available.")
+		  	dsT = fh["CorrStickCpsT"]
 	      else
-		  println("Transposed dataset for faster loading is NOT available. You can create one with ResultFileFunctions.transposeStickCps(filename).")
+		  	println("Transposed dataset for faster loading is NOT available. You can create one with ResultFileFunctions.transposeStickCps(filename).")
 	      end
 	    end
 	  end
@@ -179,8 +179,10 @@ module ResultFileFunctions
 	  end
 
 	  if ((timeIndexStart>0) & (timeIndexEnd<=size(ds)[1])) & (minimum(massIndices)>0) & (maximum(massIndices)<=size(ds)[2])
-	    result = similar(ds[1,1],(timeIndexEnd-timeIndexStart+1),length(massIndices))
-	    println("Creating result Matrix with size $(size(result))")
+	    # result = similar(ds[1,1],(timeIndexEnd-timeIndexStart+1),length(massIndices))
+	    result = similar(ds,((timeIndexEnd-timeIndexStart+1),length(massIndices)))
+	    
+		println("Creating result Matrix with size $(size(result))")
 	    if length(massIndices) < size(ds)[2]
 		println("Subset of masses requested")
 		if dsTexists
@@ -225,7 +227,7 @@ module ResultFileFunctions
 
 	  if (typeof(indices) == Array{Int,1}) | (typeof(indices) == Array{Integer})
 	    if (minimum(indices)>0) & (maximum(indices)<size(ds)[2])
-	      result = similar(ds[1,1],size(ds)[1],length(indices))
+	      result = similar(ds,(size(ds)[1],length(indices)))
 	      for i=1:length(indices)
 		result[:,i] = ds[:,i]
 	      end
@@ -244,17 +246,17 @@ module ResultFileFunctions
 
 	function transposeStickCps(filename)
 	  fh = HDF5.h5open(filename,"r+")
-	  if ! HDF5.exists(fh, "CorrStickCps")
+	  if ! haskey(fh,"CorrStickCps")
 	      println("CorrStickCps not present, skipping transpose.")
 	      HDF5.close(fh)
 	      return
 	  end
-	  if HDF5.exists(fh, "CorrStickCpsT")
-	      HDF5.o_delete(fh,"CorrStickCpsT")
+	  if haskey(fh,"CorrStickCpsT")
+	      HDF5.delete_attribute(fh,"CorrStickCpsT")
 	  end
 	  dsOld = fh["CorrStickCps"]
 	  nbrSpectra, nbrMasses = size(dsOld)
-	  dsNew = HDF5.d_create(fh, "CorrStickCpsT", HDF5.datatype(Float32), HDF5.dataspace(nbrMasses, nbrSpectra), "chunk", (1,nbrSpectra), "compress", 3)
+	  dsNew = HDF5.create_dataset(fh, "CorrStickCpsT", HDF5.datatype(Float32), HDF5.dataspace(nbrMasses, nbrSpectra), chunk=(1,nbrSpectra), compress=3)
 	  spectraAtOnce = 10000
 	  for i=1:Int(floor(nbrSpectra/spectraAtOnce))
 	      startIdx = (i-1)*spectraAtOnce + 1
@@ -297,7 +299,7 @@ module ResultFileFunctions
 
 	  if (typeof(indices) == Array{Int,1}) | (typeof(indices) == Array{Integer})
 	    if (minimum(indices)>0) & (maximum(indices)<=size(ds)[1])
-	      result = similar(ds[1,1],length(indices),size(ds)[2])
+	      result = similar(ds,(length(indices),size(ds)[2]))
 	      for i=1:length(indices)
 		result[i,:] = ds[i,:]
 	      end

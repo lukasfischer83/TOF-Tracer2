@@ -9,7 +9,7 @@ import PyPlot
 @everywhere import .APiTOFFunctions
 import .InterpolationFunctions
 
-function correctMassScaleAndExtractSumSpec(
+function correctMassScaleAndExtractSumSpecAPi(
   filepath,
   masslistMasses,
   masslistElements,
@@ -104,12 +104,12 @@ function correctMassScaleAndExtractSumSpec(
   APiTOFFunctions.setMassScaleReferenceSpectrum(referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters, plotControlMass=plotControlMass, testRangeStart=testRangeStart, testRangeEnd=testRangeEnd)
   #
   fh = HDF5.h5open(referenceFile,"r")
-  if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
-  lenMassAxis = length(HDF5.h5read(referenceFile, "SPECdata/AverageSpec"))
-  referenceMassAxis = Array{Float64}(undef,lenMassAxis)  #referenceMassAxis = []
+  if ("InstrumentType" in keys(HDF5.attrs(fh)))
+    lenMassAxis = length(HDF5.h5read(referenceFile, "SPECdata/AverageSpec"))
+    referenceMassAxis = Array{Float64}(undef,lenMassAxis)  #referenceMassAxis = []
   else
-  referenceMassAxis = []
-  referenceMassAxis = HDF5.h5read(referenceFile, "FullSpectra/MassAxis")
+    referenceMassAxis = []
+    referenceMassAxis = HDF5.h5read(referenceFile, "FullSpectra/MassAxis")
   end
   HDF5.close(fh)
   #
@@ -187,7 +187,7 @@ function correctMassScaleAndExtractSumSpec(
     dsAvgSumWidth = length(referenceSpectrum)
     dspaceAvgSumSpecs = HDF5.dataspace((dsAvgSumWidth,1)::Dims, max_dims=(dsAvgSumWidth,typemax(Int64)))
     dtypeAvgSumSpecs = HDF5.datatype(Float32)
-    dsetAvgSumSpecs = HDF5.d_create(fid, "SumSpecs", dtypeAvgSumSpecs, dspaceAvgSumSpecs, "chunk", (dsAvgSumWidth,1), "compress", 3)
+    dsetAvgSumSpecs = HDF5.create_dataset(fid, "SumSpecs", dtypeAvgSumSpecs, dspaceAvgSumSpecs; chunk=(dsAvgSumWidth,1), compress=3)
   end
 
   if (!onlyUseAverages)
@@ -195,15 +195,15 @@ function correctMassScaleAndExtractSumSpec(
     dsStickCpsWidth = nMasses
     dspaceStickCps = HDF5.dataspace((1,dsStickCpsWidth)::Dims, max_dims=(typemax(Int64),dsStickCpsWidth))
     dtypeStickCps = HDF5.datatype(Float32)
-    dsetStickCps = HDF5.d_create(fid, "StickCps", dtypeStickCps, dspaceStickCps, "chunk", (1,dsStickCpsWidth), "compress", 3)
-    dsetStickCpsErr = HDF5.d_create(fid, "StickCpsErr", dtypeStickCps, dspaceStickCps, "chunk", (1,dsStickCpsWidth), "compress", 3)
+    dsetStickCps = HDF5.create_dataset(fid, "StickCps", dtypeStickCps, dspaceStickCps; chunk=(1,dsStickCpsWidth), compress=3)
+    dsetStickCpsErr = HDF5.create_dataset(fid, "StickCpsErr", dtypeStickCps, dspaceStickCps; chunk=(1,dsStickCpsWidth), compress=3)
     dsUMRStickCpsWidth = UMRmasses
     dspaceUMRStickCps = HDF5.dataspace((1,dsUMRStickCpsWidth)::Dims, max_dims=(typemax(Int64),dsUMRStickCpsWidth))
-    dsetUMRStickCps = HDF5.d_create(fid, "UMRStickCps", dtypeStickCps, dspaceUMRStickCps, "chunk", (1,dsUMRStickCpsWidth), "compress", 3)
+    dsetUMRStickCps = HDF5.create_dataset(fid, "UMRStickCps", dtypeStickCps, dspaceUMRStickCps; chunk=(1,dsUMRStickCpsWidth), compress=3)
 
     dspaceTimes = HDF5.dataspace((1,)::Dims, max_dims=(typemax(Int64),))
     dtypeTimes = HDF5.datatype(Float64)
-    dsetTimes = HDF5.d_create(fid, "Times", dtypeTimes, dspaceTimes, "chunk", (1,))
+    dsetTimes = HDF5.create_dataset(fid, "Times", dtypeTimes, dspaceTimes; chunk=(1,))
 
   end
   ################################################################################
@@ -221,9 +221,9 @@ function correctMassScaleAndExtractSumSpec(
     if debuglevel > 0   println("Processing File $j/$nFiles :  $totalPath") end
 
     fileIsBad = false;
-    if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
-      if HDF5.exists(HDF5.attrs(fh), "PROCESSED")#try obj = fh["PROCESSED"]
-        massAxis = HDF5.h5read(filename, "PROCESSED/AverageSpectrum/MassAxis")
+    if ("InstrumentType" in keys(HDF5.attrs(fh)))
+      if haskey(fh,"PROCESSED")
+        massAxis = HDF5.h5read(totalPath, "PROCESSED/AverageSpectrum/MassAxis")
       else # catch
         lenMassAxis = length(HDF5.h5read(totalPath, "SPECdata/AverageSpec"))
         timeBins = vcat(range(1,stop=lenMassAxis,length=lenMassAxis))
@@ -266,7 +266,7 @@ function correctMassScaleAndExtractSumSpec(
         currDims = size(dsetAvgSumSpecs)[2]
         dsetAvgSumSpecs[:,currDims] = interpolatedSpectrum
         if (j != nFiles)
-          HDF5.set_dims!(dsetAvgSumSpecs, (dsAvgSumWidth,currDims+1)::Dims)
+          HDF5.set_extent_dims(dsetAvgSumSpecs, (dsAvgSumWidth,currDims+1)::Dims)
         end
       end
       println("DONE")
@@ -417,10 +417,10 @@ function correctMassScaleAndExtractSumSpec(
         #println("DeltaT: $deltaT")
         dsetStickCpsErr[currDimsTime,:] = sqrt.(abs.(subSpecStickCps./deltaT))
         if !((j==nFiles) && (subSpecIdx== APiTOFFunctions.getSubSpectraCount(totalPath)))
-          HDF5.set_dims!(dsetTimes, (currDimsTime+1,)::Dims)
-          HDF5.set_dims!(dsetStickCps, (currDimsTime+1,dsStickCpsWidth)::Dims)
-          HDF5.set_dims!(dsetStickCpsErr, (currDimsTime+1,dsStickCpsWidth)::Dims)
-          HDF5.set_dims!(dsetUMRStickCps, (currDimsTime+1,dsUMRStickCpsWidth)::Dims)
+          HDF5.set_extent_dims(dsetTimes, (currDimsTime+1,)::Dims)
+          HDF5.set_extent_dims(dsetStickCps, (currDimsTime+1,dsStickCpsWidth)::Dims)
+          HDF5.set_extent_dims(dsetStickCpsErr, (currDimsTime+1,dsStickCpsWidth)::Dims)
+          HDF5.set_extent_dims(dsetUMRStickCps, (currDimsTime+1,dsUMRStickCpsWidth)::Dims)
         end
       end
       println("DONE")
