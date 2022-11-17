@@ -70,7 +70,7 @@ module APiTOFFunctions
 
 	function getMassCalibParametersFromFile(filename)
 		fh = HDF5.h5open(filename,"r")
-	    if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+	    if ("InstrumentType" in keys(HDF5.attrs(fh)))
 		  try obj0 = fh["fitParams"]
 			mcm = 2
 		  catch
@@ -135,7 +135,7 @@ module APiTOFFunctions
 
 	function getAvgSpectrumFromFile(filename)
 	  fh = HDF5.h5open(filename,"r")
-	  if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+	  if ("InstrumentType" in keys(HDF5.attrs(fh)))
  		avgSpectrum = HDF5.h5read(filename, "SPECdata/AverageSpec")
   		return avgSpectrum
 	  else
@@ -164,7 +164,7 @@ module APiTOFFunctions
 	function getSubSpectraCount(filename)
 	  #println("Getting sub spectrum count from $filename")
 	  fh = HDF5.h5open(filename,"r")
-	  if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+	  if ("InstrumentType" in keys(HDF5.attrs(fh)))
 	      ds = fh["/SPECdata/Intensities"]
 	      l=1#size(ds)[1]
 	      m=size(ds)[2]
@@ -247,7 +247,7 @@ module APiTOFFunctions
 
 	function getSpecMultiplicator(filename)
 		fh = HDF5.h5open(filename,"r")
-  		if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+  		if ("InstrumentType" in keys(HDF5.attrs(fh)))
     	return 1
   		else
 	  	attributesRoot = HDF5.h5readattr(filename, "/")
@@ -276,7 +276,7 @@ module APiTOFFunctions
 
 	function getSubSpectrumTimeFromFile(filename, index)
 		fh = HDF5.h5open(filename,"r")
-        if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+        if ("InstrumentType" in keys(HDF5.attrs(fh)))
           SpectraTimes = HDF5.h5read(filename, "/SPECdata/Times")
           ds = fh["/SPECdata/Times"]
           timeCache.filename = filename
@@ -302,9 +302,9 @@ module APiTOFFunctions
 
 	function getTimeFromFile(filename)
 		fh = HDF5.h5open(filename,"r")
-		if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+		if ("InstrumentType" in keys(HDF5.attrs(fh)))
   		attributesRoot = HDF5.h5readattr(filename, "/")
-  		if HDF5.exists(HDF5.attrs(fh), "FileCreatedTime_UTC")
+  		if ("FileCreatedTime_UTC" in keys(HDF5.attrs(fh)))
 	  	time_LabVIEWTimestamp = attributesRoot["FileCreatedTime_UTC"]
 	  	println("### Using UTC time stamp ###")
   		else
@@ -339,7 +339,7 @@ module APiTOFFunctions
 		  		push!(badFiles,files[j])
 			 else
 		  		fh = HDF5.h5open(totalPath,"r")
-		  		if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+		  		if ("InstrumentType" in keys(HDF5.attrs(fh)))
 			  		println("Ok, ioniTOF file format detected.")
 					SpectraTimes = HDF5.h5read(totalPath, "/SPECdata/Times")
 					if size(SpectraTimes[:,1])[1]==4
@@ -355,7 +355,7 @@ module APiTOFFunctions
 			end
 
 			if (length(ds) > 0)
-				if HDF5.exists(HDF5.attrs(fh), "InstrumentType")
+				if ("InstrumentType" in keys(HDF5.attrs(fh)))
 					if (ds[end,1] > 1e-99) #(ds[end,][end,] > 1e-99) #(ds[end,end][end,end] > 1e-99) # Last timestamp seems to be very small on corrupted files TODO
 						if debuglevel > 1 println("OK ioniAPiTOF file") end
 						push!(validFiles,files[j])

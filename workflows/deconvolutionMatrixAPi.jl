@@ -8,7 +8,7 @@ import .InterpolationFunctions
 
 #include("masslistFunctions.jl")
 
-function deconvolute(
+function deconvoluteAPi(
   filepath;
   outputfilename="results/_result.hdf5",
   binWidth = 6,
@@ -66,7 +66,7 @@ function deconvolute(
     println(" DONE")
 
     print("Applying deconvolution kernel...")
-    counts = deconvolutionMatrix * stickRaw
+    counts = deconvolutionMatrix * Float64.(stickRaw)
     println(" DONE")
 
   print("Reconstructing Spectrum for visual check...")
@@ -102,20 +102,20 @@ function deconvolute(
 
   fh = HDF5.h5open(file,"r+")
 
-  if HDF5.exists(fh, "CorrStickCps")
-  HDF5.o_delete(fh,"CorrStickCps")
+  if haskey(fh,"CorrStickCps")
+    HDF5.delete_attribute(fh,"CorrStickCps")
   end
 
-  if HDF5.exists(fh, "CorrStickCpsErrors")
-  HDF5.o_delete(fh,"CorrStickCpsErrors")
+  if haskey(fh,"CorrStickCpsErrors") 
+    HDF5.delete_attribute(fh,"CorrStickCpsErrors")
   end
 
-  if HDF5.exists(fh, "StickCps")
+  if haskey(fh,"StickCps")
     haveStickCps = true
 
     # Create empty Dataspace
     nbrSpectra = ResultFileFunctions.getNbrTraceSamples(file)
-    dset = HDF5.d_create(fh, "CorrStickCps", HDF5.datatype(Float32), HDF5.dataspace(nbrSpectra, length(masses)), "chunk", (1,length(masses)), "compress", 3)
+    dset = HDF5.create_dataset(fh, "CorrStickCps", HDF5.datatype(Float32), HDF5.dataspace(nbrSpectra, length(masses)); chunk=(1,length(masses)), compress=3)
 
     toProcessLow = 0
     toProcessHigh = 0
@@ -138,6 +138,7 @@ function deconvolute(
     end
     #HDF5.h5write(file, "CorrStickCps", convert(Array,traces))
     #HDF5.h5write(file, "CorrStickCpsErrors", tracesErrors)
+    HDF5.write_attribute(file, "CorrStickCps", dset)
   end
   HDF5.close(fh)
 
@@ -146,7 +147,7 @@ function deconvolute(
   end
 
   fh = HDF5.h5open(file,"r+")
-  if HDF5.exists(fh, "AvgStickCps")
+  if haskey(fh, "AvgStickCps")
 
     traces = HDF5.h5read(file, "AvgStickCps")[:,selector]
     tracesErrors = similar(traces)
@@ -156,22 +157,19 @@ function deconvolute(
       #tracesErrors[i,:] = abs(deconvolutionMatrix) * sqrt(abs(traces[i,:])/3600)
   end
 
-  if HDF5.exists(fh, "CorrAvgStickCps")
-  HDF5.o_delete(fh,"CorrAvgStickCps")
+  if haskey(fh,"CorrAvgStickCps")
+    HDF5.delete_attribute(fh,"CorrAvgStickCps")
   end
-  if HDF5.exists(fh, "CorrAvgStickCpsErrors")
-  HDF5.o_delete(fh,"CorrAvgStickCpsErrors")
+  if haskey(fh,"CorrAvgStickCpsErrors")
+    HDF5.delete_attribute(fh,"CorrAvgStickCpsErrors")
   end
+
   HDF5.h5write(file, "CorrAvgStickCps", traces)
   HDF5.h5write(file, "CorrAvgStickCpsErrors", tracesErrors)
   end
+  
   HDF5.close(fh)
 
-
-  #if haveStickCps
-  #  traces = HDF5.h5read(file, "CorrStickCps")[:,selector]
-  #else
-  #  traces = HDF5.h5read(file, "CorrAvgStickCps")[:,selector]
-  #end
+  
   return deconvolutionMatrix
 end

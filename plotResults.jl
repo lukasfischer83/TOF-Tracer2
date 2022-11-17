@@ -16,11 +16,11 @@ smoothing = 1 # Average n samples, 1 for raw
 plotsymbol = ".-"
 isobarToPlot = 0
 #timedelay = Dates.Hour(0) # CLOUD12, ...
-timedelay = Dates.Hour(1) # CLOUDX, CLOUD11
+timedelay = Dates.Hour(-1) # CLOUDX, CLOUD11
 
 backgroundSubstractionMode = 0 # 0=no correction, 1=minimum found in all data,  2=mean of range given below
-backgroundStart = DateTime(2016,10,02,17,14)
-backgroundEnd = DateTime(2016,10,02,17,20)
+backgroundStart = DateTime(2016,10,02,19,14)
+backgroundEnd = DateTime(2016,10,02,19,20)
 
 
 include("manualMassLibrary.jl")

@@ -1,12 +1,10 @@
-#cd("/home/user/github/TOF-Tracer2/")
-
 include("$(pwd())/startupAPiTOF.jl")
 
-fp = "./ExampleFiles/APiTOFDATA/" # All files in this path will be processed
+fp = "$(pwd())/ExampleFiles/APiTOFDATA/" # All files in this path will be processed
 filefilterRegexp = r"\.h5$"
-rf = "./ExampleFiles/APiTOFDATA/Data_09_46_20_04mm.h5"  # The mass scale from this file defines the mass scale of all
+rf = "$(pwd())/ExampleFiles/APiTOFDATA/Data_09_46_20_04mm.h5"  # The mass scale from this file defines the mass scale of all
 
-masslist = MasslistFunctions.loadMasslist("./ExampleFiles/MASSLISTS/exampleMasslist.csv")
+masslist = MasslistFunctions.loadMasslist("$(pwd())/ExampleFiles/MASSLISTS/exampleMassList.csv")
 cr = [37.028406 55.038971 282.118343] # pos
 #cr = [62 125] # neg
 
@@ -22,7 +20,7 @@ masslistCompositions = masslistCompositions[s,:]
 ####################### Processing sequence ###########################################################
 
 
-correctMassScaleAndExtractSumSpec(
+correctMassScaleAndExtractSumSpecAPi(
     fp,
     masslistMasses,
     masslistElements,
@@ -37,7 +35,7 @@ correctMassScaleAndExtractSumSpec(
     testRangeEnd = 55.5,
     recalibInterval = 900,
     resolution = 5500,
-    firstNFiles= 1,
+    firstNFiles= 0,
     lastNFiles = 0,
     UMRpeaks = true, # create Unit Mass Resolution peaks
     UMRmasses = length(s),
@@ -58,7 +56,7 @@ baselineAndPeakshape(
     )
     #
 #
-mtrx = deconvolute(
+mtrx = deconvoluteAPi(
     fp,
     calcTransposed = false
     )

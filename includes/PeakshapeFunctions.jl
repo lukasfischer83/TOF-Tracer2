@@ -30,7 +30,7 @@ module PeakshapeFunctions
 
 	    PyPlot.figure()
 	    for massRegion = 1:nbrMassRegions
-	      ax=PyPlot.subplot(ceil(nbrMassRegions/4),4,massRegion)
+	      ax=PyPlot.subplot(Int(ceil(nbrMassRegions/4)),4,massRegion) #change Int() Leander
 
 	      #peakshapeRangeStart = (massRegion-1) *peakMasses[end] / nbrMassRegions
 	      #peakshapeRangeEnd = (massRegion) *peakMasses[end] / nbrMassRegions
@@ -106,4 +106,3 @@ module PeakshapeFunctions
 	  end
 
 end
-
