@@ -14,7 +14,7 @@ Julia Version 1.6.5 and Version 1.8.1
 HDF5 v0.16.5
 DSP v0.7.7
 PyPlot v2.11.0
-LsqFit v2.11.0
+LsqFit v0.13.0
 
 ## if you want an editor:
 Visual Studio Code (https://code.visualstudio.com/docs/setup/linux )
