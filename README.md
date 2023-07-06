@@ -11,7 +11,7 @@ Packages: HDF5, PyPlot, DSP, LsqFit (for ApiTOF data analysis)
 currently tested with:
 
 Julia Version 1.6.5 and Version 1.8.1
-HDF5 v0.16.5
+HDF5 v0.16.12 - v0.16.15
 DSP v0.7.7
 PyPlot v2.11.0
 LsqFit v0.13.0
