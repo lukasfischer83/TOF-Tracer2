@@ -156,7 +156,7 @@ function correctMassScaleAndExtractSumSpecAPi(
   elseif  (massBorderCalculation == 1)
   #mlow = masslistMasses .* resolution./(resolution+0.5)
   #mhigh = masslistMasses .* resolution./(resolution-0.5)
-  massborders = MasslistFunctions.IntegrationBorders(masslistMasses, resolution)
+  massborders = MasslistFunctions.IntegrationBorders(masslistMasses; resolution=resolution)
   end
 
 

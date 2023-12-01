@@ -31,3 +31,16 @@ Try the example with include("processingProjects/processingProject-example.jl") 
 
 
 plot the result with plotResults.jl
+
+# Testing the package with
+activate the package with 
+
+	] activate .
+
+then 
+run tests in package mode ```(TOFTracer2) pkg>``` with 
+
+	test [--coverage]
+	
+
+
