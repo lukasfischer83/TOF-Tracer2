@@ -1,10 +1,10 @@
 import HDF5
 import PyPlot
 import SparseArrays
-import .MultipeakFunctions
-import .MasslistFunctions
-import .ResultFileFunctions
-import .InterpolationFunctions
+#import .MultipeakFunctions
+#import .MasslistFunctions
+#import .ResultFileFunctions
+#import .InterpolationFunctions
 
 #include("masslistFunctions.jl")
 

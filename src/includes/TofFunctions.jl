@@ -11,7 +11,6 @@ module TOFFunctions
 
 	SPEC_CACHE_SIZE_LIMIT = 5e8
 
-
 	export clearCache, mass2timebin, timebin2mass, getMassCalibParametersFromFile, getSubSpectraCount, getSubSpectrumFromFile, getSpecMultiplicator, getSubSpectrumTimeFromFile, getAvgSpectrumFromFile, getTimeFromFile, validateHDF5Files, setMassScaleReferenceSpectrum, recalibrateMassScale
 
 	debuglevel = 3

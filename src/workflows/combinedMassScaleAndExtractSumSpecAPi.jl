@@ -35,7 +35,7 @@ function correctMassScaleAndExtractSumSpecAPi(
   massBorderCalculation = 1, # How to calculate borders? 0 = Cernter -0.1 to Center + 0.4,  1 = based on resolution and peak distance, 2 = constant bin width
   binWidth = 6,
   resolution = 5500,
-  filePrecaching = true, # Precache whole next file. Only use when you have enough RAM and no SWAP has to be used.
+  filePrecaching = false, # Precache whole next file. Only use when you have enough RAM and no SWAP has to be used.
   openWholeFile = false,#true
   UMRpeaks = true,
   UMRmasses = 900,

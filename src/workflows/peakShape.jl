@@ -1,10 +1,9 @@
-push!(LOAD_PATH, pwd())
 
 import PyPlot
 import HDF5
-import .InterpolationFunctions
-import .BaselineFunctions
-import .PeakshapeFunctions
+#import .InterpolationFunctions
+#import .BaselineFunctions
+#import .PeakshapeFunctions
 
 function baselineAndPeakshape(
   filepath;

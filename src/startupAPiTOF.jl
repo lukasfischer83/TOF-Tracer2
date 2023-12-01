@@ -1,3 +1,5 @@
+module TOFTracer2_APITOF
+
 using Distributed
 using Dates
 using DelimitedFiles
@@ -8,7 +10,9 @@ if (nprocs() < 2 && isdefined(Main, :usePrecaching) && usePrecaching)
     addprocs(1)
 end
 
-scriptspath =  pwd()
+scriptspath =  @__DIR__
+print("scriptspath: ",scriptspath, "\n")
+
 if ! isdefined(Main, :FunctionsLoaded)
     #load includes
     include("includes/BaselineFunctions.jl")
@@ -30,4 +34,6 @@ if ! isdefined(Main, :FunctionsLoaded)
     include("$(scriptspath)/workflows/peakShape.jl")
     include("$(scriptspath)/workflows/deconvolutionMatrixAPi.jl")
     FunctionsLoaded = true
+end
+
 end

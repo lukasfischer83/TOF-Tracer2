@@ -1,16 +1,14 @@
-push!(LOAD_PATH, pwd())
-include("startup.jl")
 
 using HDF5
 #using PyCall
 #pygui(:tk) # :tk, :gtk3, :gtk, :qt5, :qt4, :qt, or :wx
 using PyPlot
-import .InterpolationFunctions
-import  .MasslistFunctions
-import .ResultFileFunctions
+using Dates
+using TOFTracer2
 
-file = "ExampleFiles/TOFDATA/results/_result.hdf5"
-plotHighTimeRes = true # Plot every datapoint or only file averages
+file = "$(pwd())/ExampleFiles/TOFDATA/results/_result.hdf5"
+
+plotHighTimeRes = false # Plot every datapoint or only file averages
 plotFittedInsteadOfSummed = true # Use multi peak fitted data instead of raw
 smoothing = 1 # Average n samples, 1 for raw
 plotsymbol = ".-"
@@ -23,12 +21,10 @@ backgroundStart = DateTime(2016,10,02,19,14)
 backgroundEnd = DateTime(2016,10,02,19,20)
 
 
-include("manualMassLibrary.jl")
-
 massesToPlot = [
 # Examples for selecting what to plot:
 MasslistFunctions.massFromComposition(C=10,H=16,O=2)
-APINENE[1]
+massLibrary.APINENE[1]
 ]
 
 measResult = ResultFileFunctions.loadResults(file, massesToLoad=massesToPlot, useAveragesOnly=!plotHighTimeRes, raw=!plotFittedInsteadOfSummed, massMatchTolerance=0.01)

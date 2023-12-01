@@ -1,4 +1,4 @@
-include("$(pwd())/startup.jl")
+using TOFTracer2
 
 fp = "$(pwd())/ExampleFiles/TOFDATA/" # All files in this path will be processed
 filefilterRegexp = r"\.h5$"
@@ -29,7 +29,7 @@ correctMassScaleAndExtractSumSpec(
     rf,
     cr,
     filefilterRegexp=filefilterRegexp,
-    onlyUseAverages = false,
+    onlyUseAverages = true,
     plotControlMass = true,
     firstNFiles=0,
     lastNFiles = 0,

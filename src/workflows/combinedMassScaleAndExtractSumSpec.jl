@@ -1,4 +1,3 @@
-push!(LOAD_PATH, pwd())
 
 using Distributed
 import HDF5
@@ -6,8 +5,8 @@ import Statistics
 #using PyCall
 #pygui(:tk) # :tk, :gtk3, :gtk, :qt5, :qt4, :qt, or :wx
 import PyPlot
-@everywhere import .TOFFunctions
-import .InterpolationFunctions
+#import .TOFFunctions
+#import .InterpolationFunctions
 
 function correctMassScaleAndExtractSumSpec(
   filepath,
