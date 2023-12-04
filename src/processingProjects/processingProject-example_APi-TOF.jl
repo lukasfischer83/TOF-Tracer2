@@ -56,8 +56,9 @@ baselineAndPeakshape(
     )
     #
 #
-mtrx = deconvoluteAPi(
+mtrx = deconvolute(
     fp,
-    calcTransposed = false
+    calcTransposed = false,
+    APITOF = true
     )
 #
