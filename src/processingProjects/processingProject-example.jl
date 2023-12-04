@@ -48,4 +48,5 @@ baselineAndPeakshape(
 mtrx = deconvolute(
     fp,
     calcTransposed = true
+    APITOF = false
     )

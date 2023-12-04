@@ -2,19 +2,15 @@ import HDF5
 import PyPlot
 import SparseArrays
 #import .MultipeakFunctions
-#import .MasslistFunctions
-#import .ResultFileFunctions
-#import .InterpolationFunctions
 
-#include("masslistFunctions.jl")
 
 function deconvolute(
   filepath;
   outputfilename="results/_result.hdf5",
   binWidth = 6,
-  calcTransposed = false
+  calcTransposed = false,
+  APITOF = false
   )
-  #binWidth += 1 # Maybe crosstalk is calculated from "<" while summing is done from "<=" ?? Gives better crostalk removal.
   file = joinpath(filepath, outputfilename)
 
   peakShapesY = HDF5.h5read(file, "MassDepPeakshape")
@@ -54,16 +50,26 @@ function deconvolute(
 
 
     print("Populating matrix for inversion of linear system...")
-    mtrx = MultipeakFunctions.calculateCrossTalkMatrix(masses, massCenterIdx, massLowIdx, massHighIdx, massScaleMode, massScaleParameters, compositions, peakShapesCenterMass, peakShapesY)
+    if APITOF
+    	mtrx = MultipeakFunctionsAPi.calculateCrossTalkMatrix(masses, massCenterIdx, massLowIdx, massHighIdx, massScaleMode, massScaleParameters, compositions, peakShapesCenterMass, peakShapesY)
+    else
+    	mtrx = MultipeakFunctions.calculateCrossTalkMatrix(masses, massCenterIdx, massLowIdx, massHighIdx, massScaleMode, massScaleParameters, compositions, peakShapesCenterMass, peakShapesY)
+    end
     stickRaw = [InterpolationFunctions.interpolatedSum(massLowIdx[i], massHighIdx[i], totalAvgSpectrum) for i=1:length(masses)]
     println(" DONE")
 
 
 
     print("Inverting Matrix...")
-    deconvolutionMatrix = SparseArrays.sparse(inv(mtrx)) # sparse on one processor is as fast as dense on mp, --> choosing less power consumption.
-    #deconvolutionMatrix = (inv(mtrx)) # there seems to be no multithread support for sparse matrix multiplication, still sparse is same speed
+
+    if APITOF  # maybe!!! needs test
+    	deconvolutionMatrix = (inv(mtrx))
+    else
+    	deconvolutionMatrix = SparseArrays.sparse(inv(mtrx))
+    end
+        	
     println(" DONE")
+
 
     print("Applying deconvolution kernel...")
     counts = deconvolutionMatrix * Float64.(stickRaw)
@@ -71,24 +77,34 @@ function deconvolute(
 
   print("Reconstructing Spectrum for visual check...")
 
-  PyPlot.semilogy(massAxis,totalAvgSpectrum, "-o", label="Original", color="r")
-  #reconstructedSpectrum = reconstructSpectrum(massAxis, masses[(masses.>158) & (masses.<162)], masslistElements, compositions[:,(masses.>158) & (masses.<162)], counts[(masses.>158) & (masses.<162)], peakShapesCenterMass, peakShapesY)
-  reconstructedSpectrum = MultipeakFunctions.reconstructSpectrum(massAxis, massScaleMode, massScaleParameters, masses, compositions, counts, peakShapesCenterMass, peakShapesY)
+
+  
+    if APITOF  # maybe!!! needs test
+    	PyPlot.plot(massAxis,totalAvgSpectrum, "-o", label="Original", color="r")
+    	reconstructedSpectrum = MultipeakFunctionsAPi.reconstructSpectrum(
+    							massAxis, massScaleMode, massScaleParameters, 
+    							masses, compositions, counts, 
+    							peakShapesCenterMass, peakShapesY)
+    else
+    	PyPlot.semilogy(massAxis,totalAvgSpectrum, "-o", label="Original", color="r")
+    	reconstructedSpectrum = MultipeakFunctions.reconstructSpectrum(
+    							massAxis, massScaleMode, massScaleParameters, 
+    							masses, compositions, counts, 
+    							peakShapesCenterMass, peakShapesY)
+    end
+  
 
   PyPlot.plot(massAxis, reconstructedSpectrum, label="Fit", color="b")
   PyPlot.plot(massAxis, totalAvgSpectrum-reconstructedSpectrum, label="Residual", color="g")
   assyErrorX = [(masses-massBordersLow)'; (massBordersHigh-masses)']
   y = InterpolationFunctions.interpolate(masses, massAxis, totalAvgSpectrum)
-  PyPlot.errorbar(TOFFunctions.timebin2mass(massCenterIdx, massScaleMode, massScaleParameters),y,xerr=assyErrorX, fmt="o")
-  PyPlot.errorbar(masses,y,xerr=assyErrorX, fmt="x")
-  #=
-  fittedPeaks = Array{Float64}(length(masses),2001)
-  for i=1:length(masses)
-    approxMassIndex = searchsortedfirst(massAxis,masses[i])
-    fittedPeaks[i,:] = reconstructSpectrum(massAxis[approxMassIndex-300 : approxMassIndex+1700], masses[i], masslistElements, compositions[:,i], counts[i], peakShapesCenterMass, peakShapesY)
-    plot(massAxis[approxMassIndex-300 : approxMassIndex+1700],fittedPeaks[i,:],"--", color="green")
+  if APITOF
+  	PyPlot.errorbar(APiTOFFunctions.timebin2mass(massCenterIdx, massScaleMode, massScaleParameters),y,xerr=assyErrorX, fmt="o")
+  else
+  	PyPlot.errorbar(TOFFunctions.timebin2mass(massCenterIdx, massScaleMode, massScaleParameters),y,xerr=assyErrorX, fmt="o")
   end
-  =#
+  
+  PyPlot.errorbar(masses,y,xerr=assyErrorX, fmt="x")
 
   PyPlot.legend()
   ax[:set_ylim]([minimum(totalAvgSpectrum),maximum(totalAvgSpectrum)])
@@ -101,6 +117,7 @@ function deconvolute(
   # Correct timetraces
 
   fh = HDF5.h5open(file,"r+")
+  
   if haskey(fh,"CorrStickCps")
     HDF5.delete_attribute(fh,"CorrStickCps")
   end
@@ -124,18 +141,16 @@ function deconvolute(
         toProcessHigh = nbrSpectra
       end
       print("Correcting spectrum $toProcessLow to $toProcessHigh of $nbrSpectra: Loading...")
-      #samplesSubRange = convert(SharedArray, ResultFileFunctions.getTraceSamples(file,toProcessLow:toProcessHigh, raw=true)[:,selector])
       samplesSubRange = ResultFileFunctions.getTraceSamples(file,toProcessLow:toProcessHigh, raw=true)[:,selector]
       print("Deconvoluting...")
       for i=1:(toProcessHigh - toProcessLow + 1)
-        #traces[i,:] = deconvolutionMatrix * traces[i,:]
-        #tracesErrors[i,:] = abs(deconvolutionMatrix) * sqrt(abs(traces[i,:])/5
-        dset[toProcessLow - 1 + i,:] = deconvolutionMatrix *samplesSubRange[i,:]
+	dset[toProcessLow - 1 + i,:] = deconvolutionMatrix *samplesSubRange[i,:]
       end
-      
       println("DONE")
     end
-    #HDF5.write_dataset(fh, "CorrStickCps", dset)
+    if APITOF # because transposing does not always work for ApiTOF(?)
+      HDF5.write_dataset(fh, "CorrStickCps", dset)
+    end
   end
   HDF5.close(fh)
 
@@ -149,9 +164,7 @@ function deconvolute(
     traces = HDF5.h5read(file, "AvgStickCps")[:,selector]
     tracesErrors = similar(traces)
     for i=1:size(traces,1)
-      #traces[i,:] = deconvolutionMatrix \ traces[i,:]
       traces[i,:] = deconvolutionMatrix * traces[i,:]
-      # tracesErrors[i,:] = abs(deconvolutionMatrix) * sqrt(abs(traces[i,:])/3600)
     end
 
     if haskey(fh,"CorrAvgStickCps")
