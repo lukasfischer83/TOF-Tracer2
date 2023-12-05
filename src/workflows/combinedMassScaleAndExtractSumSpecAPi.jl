@@ -18,7 +18,7 @@ function correctMassScaleAndExtractSumSpecAPi(
   referenceFile,
   calibRegions; # Regions which are pattern matched for mass shifts
   filefilterRegexp=r"\.h5$",
-  outputfilename="results/_result.hdf5",
+  outputfilename=joinpath("results","_result.hdf5"),
   firstNFiles=0, # only analyze the first N files, set to 0 for all files
   lastNFiles=0, # only analyze the last N files, set to 0 for all files
   debuglevel=3,
@@ -169,8 +169,8 @@ function correctMassScaleAndExtractSumSpecAPi(
   end
 
   ############## Check output path and remove existing files #####################
-  if (!isdir("$filepath/results"))
-    mkdir("$filepath/results")
+  if (!isdir(joinpath(filepath,"results")))
+    mkdir(joinpath(filepath,"results"))
   end
   outfilepath = joinpath(filepath, outputfilename)
   if isfile(outfilepath)

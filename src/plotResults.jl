@@ -6,7 +6,7 @@ using PyPlot
 using Dates
 using TOFTracer2
 
-file = "$(pwd())/ExampleFiles/TOFDATA/results/_result.hdf5"
+file = joinpath(pwd(),"ExampleFiles","TOFDATA","results","_result.hdf5")
 
 plotHighTimeRes = false # Plot every datapoint or only file averages
 plotFittedInsteadOfSummed = true # Use multi peak fitted data instead of raw

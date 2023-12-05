@@ -17,24 +17,30 @@ print("scriptspath: ",scriptspath, "\n")
 
 if ! isdefined(Main, :FunctionsLoaded)
     #load includes
-    include("includes/BaselineFunctions.jl")
-    include("includes/InterpolationFunctions.jl")
-    include("includes/DatasetPreloader.jl")
-    include("includes/MasslistFunctions.jl")
-    include("includes/PeakshapeFunctions.jl")
-    include("includes/TofFunctions.jl")
-    include("includes/MultipeakFunctions.jl")
-    include("includes/ResultFileFunctions.jl")
+    include(joinpath("includes","BaselineFunctions.jl"))
+    include(joinpath("includes","InterpolationFunctions.jl"))
+    include(joinpath("includes","DatasetPreloader.jl"))
+    include(joinpath("includes","MasslistFunctions.jl"))
+    include(joinpath("includes","PeakshapeFunctions.jl"))
+    include(joinpath("includes","TofFunctions.jl"))
+    include(joinpath("includes","MultipeakFunctions.jl"))
+    include(joinpath("includes","ResultFileFunctions.jl"))
     #misc module leftovers
-    include("includes/TofTracer.jl")
+    include(joinpath("includes","TofTracer.jl"))
 
     #Load Personal MassLibrary Definitions
-    include("includes/manualMassLibrary.jl")
+    include(joinpath("includes","manualMassLibrary.jl"))
 
     #Load workflows
-    include("$(scriptspath)/workflows/combinedMassScaleAndExtractSumSpec.jl")
-    include("$(scriptspath)/workflows/peakShape.jl")
-    include("$(scriptspath)/workflows/deconvolutionMatrix.jl")
+    include(joinpath("workflows","combinedMassScaleAndExtractSumSpec.jl"))
+    include(joinpath("workflows","peakShape.jl"))
+    include(joinpath("workflows","deconvolutionMatrix.jl"))
+    
+    #Load stuff for APITOF?
+    #include(joinpath("includes","APiTofFunctions.jl"))
+    #include(joinpath("includes","MultipeakFunctionsAPi.jl"))
+    #include(joinpath("workflows","combinedMassScaleAndExtractSumSpecAPi.jl"))
+    
     FunctionsLoaded = true
 end
 

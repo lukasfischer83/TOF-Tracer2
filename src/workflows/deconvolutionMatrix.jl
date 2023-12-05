@@ -6,7 +6,7 @@ import SparseArrays
 
 function deconvolute(
   filepath;
-  outputfilename="results/_result.hdf5",
+  outputfilename=joinpath("results","_result.hdf5"),
   binWidth = 6,
   calcTransposed = false,
   APITOF = false

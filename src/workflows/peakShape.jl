@@ -7,7 +7,7 @@ import HDF5
 
 function baselineAndPeakshape(
   filepath;
-  outputfilename="results/_result.hdf5",
+  outputfilename=joinpath("results","_result.hdf5"),
   peakshapeRegions=8,
   peakshapeRegionStretch=0.5,
   peakshapeQuantileValue = 0.1,

@@ -1,9 +1,9 @@
 using TOFTracer2
 
-fp = "$(pwd())/ExampleFiles/TOFDATA/" # All files in this path will be processed
+fp = joinpath(pwd(),"ExampleFiles","TOFDATA") # All files in this path will be processed
 filefilterRegexp = r"\.h5$"
-rf = "$(fp)2016-10-02-19h15m05.h5"  # The mass scale from this file defines the mass scale of all
-masslist = MasslistFunctions.loadMasslist("$(pwd())/ExampleFiles/MASSLISTS/exampleMassList.csv")
+rf = joinpath(fp,"2016-10-02-19h15m05.h5")  # The mass scale from this file defines the mass scale of all
+masslist = MasslistFunctions.loadMasslist(joinpath(pwd(),"ExampleFiles","MASSLISTS","exampleMassList.csv"))
 cr = [59 391]
 goodSignal2Noise = true # PTR3: = true, STOF: = false
 

@@ -1,10 +1,10 @@
 include("$(pwd())/startupAPiTOF.jl")
 
-fp = "$(pwd())/ExampleFiles/APiTOFDATA/" # All files in this path will be processed
+fp = joinpath(pwd(),"ExampleFiles","APiTOFDATA") # All files in this path will be processed
 filefilterRegexp = r"\.h5$"
-rf = "$(pwd())/ExampleFiles/APiTOFDATA/Data_09_46_20_04mm.h5"  # The mass scale from this file defines the mass scale of all
+rf = joinpath(pwd(),"ExampleFiles","APiTOFDATA","Data_09_46_20_04mm.h5")  # The mass scale from this file defines the mass scale of all
 
-masslist = MasslistFunctions.loadMasslist("$(pwd())/ExampleFiles/MASSLISTS/exampleMassList.csv")
+masslist = MasslistFunctions.loadMasslist(joinpath(pwd(),"ExampleFiles","MASSLISTS","exampleMassList.csv"))
 cr = [37.028406 55.038971 282.118343] # pos
 #cr = [62 125] # neg
 
