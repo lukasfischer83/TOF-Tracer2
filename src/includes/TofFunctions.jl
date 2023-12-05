@@ -30,45 +30,29 @@ module TOFFunctions
 		spectraCache = h5cache("",0,0)
 	end
 
-	
 
-	function mass2timebin(mass::Number,mode,parameters)
+	function mass2timebin(mass,mode,parameters)
 	  if mode == 0
-	    return parameters[1]*sqrt(mass) + parameters[2]
+	    return parameters[1] .*sqrt.(mass) .+ parameters[2]
 	  end
 	  if mode == 1
-	    return parameters[1]/sqrt(mass) + parameters[2]
+	    return parameters[1] ./sqrt.(mass) .+ parameters[2]
 	  end
 	  if mode == 2
-	    return parameters[1]*mass^parameters[3] + parameters[2]
+	    return parameters[1] .*mass .^ parameters[3] .+ parameters[2]
 	  end
-	end
-	function mass2timebin(mass::AbstractArray,mode,parameters)
-	  ret = Array{Float64}(undef,length(mass))
-	  Threads.@threads for i = 1:length(mass)
-	    ret[i] = TOFFunctions.mass2timebin(mass[i],mode,parameters)
-	  end
-	  return ret
 	end
 
-	function timebin2mass(time::Number,mode,parameters)
+	function timebin2mass(time,mode,parameters)
 	  if mode == 0
-	    return ((time-parameters[2])/parameters[1])^2
+	    return ((time .-parameters[2]) ./parameters[1]) .^2
 	  end
 	  if mode == 1
-	    return (parameters[1]/(time-parameters[2]))^2
+	    return (parameters[1] ./(time .-parameters[2])) .^2
 	  end
 	  if mode == 2
-	    return ((time-parameters[2])/parameters[1])^(1/parameters[3])
+	    return ((time .-parameters[2]) ./parameters[1]) .^(1/parameters[3])
 	  end
-	end
-
-	function timebin2mass(time::AbstractArray,mode,parameters)
-	  ret = Array{Float64}(undef,length(time))
-	  Threads.@threads for i = 1:length(time)
-	    ret[i] = timebin2mass(time[i],mode,parameters)
-	  end
-	  return ret
 	end
 
 	function getMassCalibParametersFromFile(filename)
@@ -383,14 +367,22 @@ module TOFFunctions
 	      success = false
 	      println("Could not correctly match m$region")
 	    end
-	    A[regionindex,1] = sqrt(region)
+	    if m_referenceMassScaleMode == 0
+	      A[regionindex,1] = sqrt(region)
+	    elseif (m_referenceMassScaleMode == 2) & (length(m_referenceMassScaleParameters)>=3)
+	      A[regionindex,1] = region^m_referenceMassScaleParameters[3]
+	    end
 	    B[regionindex] = TOFFunctions.mass2timebin(region, m_referenceMassScaleMode,m_referenceMassScaleParameters)  + shift  + 0.5
 	  end
 
 	  if success
 	    if debuglevel > 3   println("A: $A") end
 	    if debuglevel > 3   println("B: $B") end
-	    newParams = \(A,B)
+	    if m_referenceMassScaleMode == 0
+	    	newParams = \(A,B)
+	    elseif (m_referenceMassScaleMode == 2) & (length(m_referenceMassScaleParameters)>=3)
+	    	newParams = vcat(\(A,B), m_referenceMassScaleParameters[3])
+	    end
 	    if debuglevel > 3   println("New parameters: $(newParams)") end
 	  else
 	    newParams = m_referenceMassScaleParameters
