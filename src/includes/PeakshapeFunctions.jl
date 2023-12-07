@@ -1,4 +1,4 @@
-
+"The module PeakshapeFunctions is a module needed for the processing workflow and collects all functions that are related to determining the mass-dependent peakshape from the raw data."
 module PeakshapeFunctions
 	import PyPlot
 	import SharedArrays
@@ -6,7 +6,12 @@ module PeakshapeFunctions
 	import Statistics
 
 	export findPeakIndices, calculatePeakshapes, getLocalPeakshape
-	"searches an average spectrum for peaks signifficantly higher than the baseline noise and returns their interpolated indices in the average spectrum"
+
+	"""
+		findPeakIndices(massAxis, avgSpectrum, baseline, baselineNoise; kwargs...)
+		
+	searches an average spectrum for peaks significantly higher than the baseline noise and returns their interpolated indices in the average spectrum
+	"""
 	  function findPeakIndices(massAxis, avgSpectrum, baseline, baselineNoise; noiseThreshold = 80, oddEven="both", signalLimit = 1)
 	    totalMax = maximum(avgSpectrum)
 	    peakIndices = Array{Float64,1}()
@@ -21,6 +26,14 @@ module PeakshapeFunctions
 	    return peakIndices
 	  end
 
+	"""
+		calculatePeakshapes(massAxis, baselineCorrectedAvgSpec, peakIndices; kwargs...)
+		
+	calculates the per-massregion peakshapes by normalizing and shifting all peaks within a massregion onto each other. 
+	The resulting peakshape is the inner envelope (the lower quantile) of the peakshape data points.
+	
+	returns an array of the mass regions' center masses and an array of the corresponding peakshapes
+	"""
 	  function calculatePeakshapes(massAxis, baselineCorrectedAvgSpec, peakIndices; nbrMassRegions = 10, peakWindowWidth = peakWindowWidth, quantileValue = 0.05, regionStretch=1)
 	    peakMasses = InterpolationFunctions.interpolate(peakIndices, massAxis)
 	    peakValues = InterpolationFunctions.interpolate(peakIndices,baselineCorrectedAvgSpec)
@@ -89,6 +102,14 @@ module PeakshapeFunctions
 	    return peakShapesCenterMass, peakShapesY
 	  end
 
+	"""
+		getLocalPeakshape(mass, peakShapesCenterMass, peakShapesY)
+		
+	calculates the local peakshape by linearly interpolating between the nearest peakshapes-per-massregion, 
+	with the contribution depending on the distance of the local mass to each mass-region's centermass
+	
+	returns an array containing the local peakshape
+	"""
 	  function getLocalPeakshape(mass, peakShapesCenterMass, peakShapesY)
 	    peakShapeCenterMassIndexHigh = searchsortedfirst(peakShapesCenterMass, mass)
 	    if (peakShapeCenterMassIndexHigh == 1)

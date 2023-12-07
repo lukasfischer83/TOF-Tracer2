@@ -58,13 +58,19 @@ module PlotFunctions
 	    #yscale("log")
 	end
 
-	function plotTracesFromHDF5(file;
-			    massesToPlot=[MasslistFunctions.massFromComposition(H=2,O=1)],
+	"""
+	    plotTracesFromHDF5(file, massesToPlot; kwargs...)
+
+	expects a result file from TOFTracer2 processing (*.hdf5) and an array of masses to plot. 
+	
+	returns a figure, showing the time traces of the given masses. Shows only file-averages without background correction and no smooting as default.
+	"""
+	function plotTracesFromHDF5(file, massesToPlot;
 			    plotHighTimeRes = false,
 			    smoothing = 1,
 			    backgroundSubstractionMode = 0,
-			    bg = (DateTime(2016,10,02,19,14),DateTime(2016,10,02,19,20)),
-			    timedelay = Dates.Hour(-1),
+			    bg = (DateTime(2000,1,1,0,0),DateTime(2000,1,1,0,1)),
+			    timedelay = Dates.Hour(0),
 			    isobarToPlot = 0,
 			    plotsymbol = ".-",
 			    plotFittedInsteadOfSummed = true

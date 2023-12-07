@@ -1,3 +1,5 @@
 *.cov
 *.info
 ExampleFiles/TOFDATA/results/
+ExampleFiles/APiTOFDATA/results/
+docs/build/
