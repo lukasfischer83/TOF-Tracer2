@@ -59,15 +59,8 @@ function deconvolute(
     println(" DONE")
 
 
-
     print("Inverting Matrix...")
-
-    if APITOF  # maybe!!! needs test
-    	deconvolutionMatrix = (inv(mtrx))
-    else
-    	deconvolutionMatrix = SparseArrays.sparse(inv(mtrx))
-    end
-        	
+    deconvolutionMatrix = SparseArrays.sparse(inv(mtrx))	
     println(" DONE")
 
 
@@ -75,11 +68,10 @@ function deconvolute(
     counts = deconvolutionMatrix * Float64.(stickRaw)
     println(" DONE")
 
-  print("Reconstructing Spectrum for visual check...")
+    print("Reconstructing Spectrum for visual check...")
 
 
-  
-    if APITOF  # maybe!!! needs test
+    if APITOF
     	PyPlot.plot(massAxis,totalAvgSpectrum, "-o", label="Original", color="r")
     	reconstructedSpectrum = MultipeakFunctionsAPi.reconstructSpectrum(
     							massAxis, massScaleMode, massScaleParameters, 

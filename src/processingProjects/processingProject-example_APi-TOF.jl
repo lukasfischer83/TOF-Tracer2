@@ -1,4 +1,4 @@
-include("$(pwd())/startupAPiTOF.jl")
+# include("$(pwd())/startupAPiTOF.jl")
 
 fp = joinpath(pwd(),"ExampleFiles","APiTOFDATA") # All files in this path will be processed
 filefilterRegexp = r"\.h5$"

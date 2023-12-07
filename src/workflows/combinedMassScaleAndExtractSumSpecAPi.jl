@@ -6,8 +6,6 @@ import Statistics
 #using PyCall
 #pygui(:tk) # :tk, :gtk3, :gtk, :qt5, :qt4, :qt, or :wx
 import PyPlot
-@everywhere import .APiTOFFunctions
-import .InterpolationFunctions
 
 function correctMassScaleAndExtractSumSpecAPi(
   filepath,
@@ -317,7 +315,7 @@ function correctMassScaleAndExtractSumSpecAPi(
       fileInternalLocalAvgCount = 0
       print("Precalculating average for mass scale correction... ")
       ################## Get First Set of Spectra for first mass scale calib
-      if totalSubSpectra >= recalibInterval
+      if (dynamicMassScaleCorrection & (totalSubSpectra >= recalibInterval))
         # Prepare first calib beforehead
         fileInternalLocalAvg = APiTOFFunctions.getSubSpectrumFromFile(totalPath,1, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
         for avgIdx=2:minimum([recalibInterval totalSubSpectra])
@@ -340,7 +338,7 @@ function correctMassScaleAndExtractSumSpecAPi(
         fileInternalLocalAvg += subSpectrum
         fileInternalLocalAvgCount += 1
 
-        if (fileInternalLocalAvgCount > recalibInterval) || fileInternalLocalAvgCount == totalSubSpectra
+        if (dynamicMassScaleCorrection & ((fileInternalLocalAvgCount > recalibInterval) || (fileInternalLocalAvgCount == totalSubSpectra)))
           print("$subSpecIdx...")
           newParams, success, tbs, ins = APiTOFFunctions.recalibrateMassScale(fileInternalLocalAvg, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
 

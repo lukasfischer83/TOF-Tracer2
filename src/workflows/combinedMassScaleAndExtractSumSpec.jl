@@ -38,11 +38,6 @@ function correctMassScaleAndExtractSumSpec(
   openWholeFile = true
   )
 
-
-  if ! dynamicMassScaleCorrection #TODO: dummy fix, should be treated in workflow
-      recalibInterval = 1e99
-  end
-
   if (isfile(joinpath(filepath, outputfilename)))
     mv(joinpath(filepath, outputfilename), joinpath(filepath, "$outputfilename.bak"), force=true)
     if debuglevel > 0   println("Found existing result file, moving to '$outputfilename.bak'") end
@@ -268,7 +263,7 @@ function correctMassScaleAndExtractSumSpec(
       fileInternalLocalAvgCount = 0
       print("Precalculating average for mass scale correction... ")
       ################## Get First Set of Spectra for first mass scale calib
-      if totalSubSpectra >= recalibInterval
+      if (dynamicMassScaleCorrection & (totalSubSpectra >= recalibInterval))
         # Prepare first calib beforehead
         fileInternalLocalAvg = TOFFunctions.getSubSpectrumFromFile(totalPath,1, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
         for avgIdx=2:minimum([recalibInterval totalSubSpectra])
@@ -290,7 +285,7 @@ function correctMassScaleAndExtractSumSpec(
         fileInternalLocalAvg += subSpectrum
         fileInternalLocalAvgCount += 1
 
-        if (fileInternalLocalAvgCount > recalibInterval) || fileInternalLocalAvgCount == totalSubSpectra
+        if (dynamicMassScaleCorrection & ((fileInternalLocalAvgCount > recalibInterval) || (fileInternalLocalAvgCount == totalSubSpectra)))
           print("$subSpecIdx...")
           newParams, success, tbs, ins = TOFFunctions.recalibrateMassScale(fileInternalLocalAvg, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
 

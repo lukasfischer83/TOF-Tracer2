@@ -36,12 +36,12 @@ if ! isdefined(Main, :FunctionsLoaded)
     include(joinpath("workflows","combinedMassScaleAndExtractSumSpec.jl"))
     include(joinpath("workflows","peakShape.jl"))
     include(joinpath("workflows","deconvolutionMatrix.jl"))
-    
-    #Load stuff for APITOF?
-    #include(joinpath("includes","APiTofFunctions.jl"))
-    #include(joinpath("includes","MultipeakFunctionsAPi.jl"))
-    #include(joinpath("workflows","combinedMassScaleAndExtractSumSpecAPi.jl"))
-    
+
+    # load stuff for APiTOF
+    include(joinpath("includes","APiTofFunctions.jl"))
+    include(joinpath("includes","MultipeakFunctionsAPi.jl"))
+    include(joinpath("workflows","combinedMassScaleAndExtractSumSpecAPi.jl"))
+
     FunctionsLoaded = true
 end
 

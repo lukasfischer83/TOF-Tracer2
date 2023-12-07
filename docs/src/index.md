@@ -14,6 +14,7 @@ It provides functions to extract time traces from raw TOF data based on mass bor
 ```@docs
 TOFTracer2.PeakshapeFunctions
 ```
+
 ```@docs
 TOFTracer2.PeakshapeFunctions.findPeakIndices(massAxis, avgSpectrum, baseline, baselineNoise; kwargs...)
 TOFTracer2.PeakshapeFunctions.calculatePeakshapes(massAxis, baselineCorrectedAvgSpec, peakIndices; kwargs...)
