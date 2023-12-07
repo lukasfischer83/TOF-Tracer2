@@ -1,5 +1,4 @@
-push!(LOAD_PATH, pwd())
-include("startup.jl")
+using TOFTracer2
 
 #using PyCall
 #pygui(:tk) # :tk, :gtk3, :gtk, :qt5, :qt4, :qt, or :wx
@@ -9,7 +8,7 @@ import  .MasslistFunctions
 import .ResultFileFunctions
 
 
-file = "ExampleFiles/TOFDATA/results/_result.hdf5"
+file = joinpath(pwd(),"ExampleFiles","TOFDATA","results","_result.hdf5")
 availableTraces = ResultFileFunctions.loadResults(file,masslistOnly=true)
 linewidth = 2
 

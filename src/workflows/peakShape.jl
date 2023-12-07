@@ -1,14 +1,13 @@
-push!(LOAD_PATH, pwd())
 
 import PyPlot
 import HDF5
-import .InterpolationFunctions
-import .BaselineFunctions
-import .PeakshapeFunctions
+#import .InterpolationFunctions
+#import .BaselineFunctions
+#import .PeakshapeFunctions
 
 function baselineAndPeakshape(
   filepath;
-  outputfilename="results/_result.hdf5",
+  outputfilename=joinpath("results","_result.hdf5"),
   peakshapeRegions=8,
   peakshapeRegionStretch=0.5,
   peakshapeQuantileValue = 0.1,

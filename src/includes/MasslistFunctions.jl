@@ -9,7 +9,7 @@ module MasslistFunctions
 	    lowMass::Array{Float64}
 	    highMass::Array{Float64}
 
-	    function IntegrationBorders(masslist::Array{Float64,1}, resolution)
+	    function IntegrationBorders(masslist::Array{Float64,1}; resolution=3000.0)
 		borders = new(similar(masslist), similar(masslist),similar(masslist))
 		if length(masslist) < 2
 		    # return just one
@@ -38,8 +38,8 @@ module MasslistFunctions
 		end
 		return borders
 	    end
-	    function IntegrationBorders(masslist::Array{Float64,1})
-		return IntegrationBorders(masslist, 3000.0)
+	    function IntegrationBorders()
+	    	return MethodError("IntegrationBorders() expects at least a masslist (1D-Array).")
 	    end
 	end
 

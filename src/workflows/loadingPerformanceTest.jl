@@ -1,6 +1,4 @@
 usePrecaching = true
-push!(LOAD_PATH, pwd())
-include("$(pwd())/startup.jl")
 
 using Distributed
 import Statistics

@@ -1,0 +1,19 @@
+name = "TOFTracer2"
+uuid = "767abeae-b283-44e3-97fa-db60ef46027d"
+authors = ["Lukas Fischer, Wiebke Scholz <wiebke.scholz@uibk.ac.at>"]
+version = "0.1.0"
+
+[deps]
+Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+LsqFit = "2fda8390-95c7-5789-9bda-21331edee243"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+SharedArrays = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+VisualRegressionTests = "34922c18-7c2a-561c-bac1-01e79b2c4c92"

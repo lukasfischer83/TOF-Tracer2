@@ -1,5 +1,6 @@
-push!(LOAD_PATH, pwd())
-import .MasslistFunctions
+module massLibrary
+
+import ..MasslistFunctions
 
 CO2 = MasslistFunctions.createCompound(C=1, O=2)
 NH3 = MasslistFunctions.createCompound(N=1, H=3)
@@ -63,32 +64,5 @@ C15H17NO7 = MasslistFunctions.createCompound(C=15, H=17, O=7, N=1)
 
 
 ###### NAPHTHA #################
-
 NAPHTHA = MasslistFunctions.createCompound(C=10,H=8)
-
-
-###### END NAPHTHA #############
-
-
-compound2 = MasslistFunctions.createCompound(C=11, H=12, O=1)
-compound3 = MasslistFunctions.createCompound(C=4, H=6, O=1)
-compound4 = MasslistFunctions.createCompound(C=5, H=8, O=1)
-compound5 = MasslistFunctions.createCompound(C=4, H=6, O=2)
-compound6 = MasslistFunctions.createCompound(C=5, H=10, O=1)
-compound7 = MasslistFunctions.createCompound(C=6, H=10, O=1)
-compound8 = MasslistFunctions.createCompound(C=7, H=12, O=1)
-compound9 = MasslistFunctions.createCompound(C=6, H=10, O=2)
-compound10 = MasslistFunctions.createCompound(C=5, H=8, O=3)
-
-# Dimers
-
-dimer1 = MasslistFunctions.createCompound(C=19, H=28, O=9)
-dimer2 = MasslistFunctions.createCompound(C=18, H=28, O=10)
-dimer3 = MasslistFunctions.createCompound(C=20, H=32, O=9)
-dimer4 = MasslistFunctions.createCompound(C=19, H=28, O=11)
-dimer5 = MasslistFunctions.createCompound(C=19, H=26, O=19)
-
-dimer6 = MasslistFunctions.createCompound(C=20, H=31, N=1, O=7)
-dimer7 = MasslistFunctions.createCompound(C=19, H=29, N=1, O=8)
-dimer8 = MasslistFunctions.createCompound(C=20, H=31, N=1, O=9)
-dimer9 = MasslistFunctions.createCompound(C=20, H=31, N=1, O=13)
+end

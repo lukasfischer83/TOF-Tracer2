@@ -6,10 +6,8 @@ import Statistics
 #using PyCall
 #pygui(:tk) # :tk, :gtk3, :gtk, :qt5, :qt4, :qt, or :wx
 import PyPlot
-@everywhere import .TOFFunctions
-import .InterpolationFunctions
 
-function correctMassScaleAndExtractSumSpec(
+function correctMassScaleAndExtractSumSpecAPi(
   filepath,
   masslistMasses,
   masslistElements,
@@ -18,7 +16,7 @@ function correctMassScaleAndExtractSumSpec(
   referenceFile,
   calibRegions; # Regions which are pattern matched for mass shifts
   filefilterRegexp=r"\.h5$",
-  outputfilename="results/_result.hdf5",
+  outputfilename=joinpath("results","_result.hdf5"),
   firstNFiles=0, # only analyze the first N files, set to 0 for all files
   lastNFiles=0, # only analyze the last N files, set to 0 for all files
   debuglevel=3,
@@ -29,14 +27,19 @@ function correctMassScaleAndExtractSumSpec(
   createTotalAvg = true, # Needed for manualPeakFitter, not needed for timetraces
   onlyUseAverages = false, # Fast mode using only total file averages instead of individual spectra in file
   storeSubSpectra = true,
-  plotControlMass = true, # plot the control mass peak for each file after correction
+  plotControlMass = false, # plot the control mass peak for each file after correction
   testRangeStart = 137.0, # the mass shift of this region will be shown if plot control mass is set true. Should not be part of calibRegions
   testRangeEnd = 137.5,
   massBorderCalculation = 1, # How to calculate borders? 0 = Cernter -0.1 to Center + 0.4,  1 = based on resolution and peak distance, 2 = constant bin width
   binWidth = 6,
-  resolution = 7500,
-  filePrecaching = true, # Precache whole next file. Only use when you have enough RAM and no SWAP has to be used.
-  openWholeFile = true
+  resolution = 5500,
+  filePrecaching = false, # Precache whole next file. Only use when you have enough RAM and no SWAP has to be used.
+  openWholeFile = false,#true
+  UMRpeaks = true,
+  UMRmasses = 900,
+  UMRmassLow = 0.2,
+  UMRmassHigh = 0.4,
+  umrBinWidth =50
   )
 
 
@@ -52,6 +55,8 @@ function correctMassScaleAndExtractSumSpec(
   #files = filter(r"2016-07-04.*\.h5", readdir(filepath)) #one day only
   allFiles = readdir(filepath)
   files = filter(s->occursin(filefilterRegexp, s), allFiles)
+
+
 
 
   nFiles = size(files,1)
@@ -70,13 +75,16 @@ function correctMassScaleAndExtractSumSpec(
 
   nFiles = size(files,1)
 
-  validFiles, timeSortIndices = TOFFunctions.validateHDF5Files(filepath, files)
+  validFiles, timeSortIndices = APiTOFFunctions.validateHDF5Files(filepath, files)
+  #rintln("number of validFiles 1: $(size(validFiles,1))")
+  #println("timeSortIndices 1: $(timeSortIndices)")
   if !issorted(timeSortIndices)
       println("Reordering Files according to start acquisition time!")
   else
       println("File order seems fine, continuing...")
   end
   files = validFiles[timeSortIndices]
+  #println("number of files 1: $(size(files,1))")
   nFiles = size(files,1)
 
 
@@ -87,18 +95,25 @@ function correctMassScaleAndExtractSumSpec(
     end
   end
 
-
-  referenceSpectrum = TOFFunctions.getAvgSpectrumFromFile(referenceFile)
-  referenceMassScaleMode, referenceMassScaleParameters = TOFFunctions.getMassCalibParametersFromFile(referenceFile)
-  TOFFunctions.setMassScaleReferenceSpectrum(referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters, plotControlMass=plotControlMass, testRangeStart=testRangeStart, testRangeEnd=testRangeEnd)
-  referenceMassAxis = []
-  referenceMassAxis = HDF5.h5read(referenceFile, "FullSpectra/MassAxis")
-
-  # Tofwerk does not update the mass axis after manual recalibration in TofDAQ Viewer.
-  # ==> recalculate based on calib parameters.
-  println("Recalculating mass axis")
-  for i=1:length(referenceMassAxis)
-      referenceMassAxis[i] = TOFFunctions.timebin2mass(i, referenceMassScaleMode, referenceMassScaleParameters)
+  UMRpeakList = []
+  referenceSpectrum = APiTOFFunctions.getAvgSpectrumFromFile(referenceFile)
+  referenceMassScaleMode, referenceMassScaleParameters = APiTOFFunctions.getMassCalibParametersFromFile(referenceFile)
+  println("Reference File recalibrated: $referenceMassScaleParameters, calib mode: $referenceMassScaleMode")
+  APiTOFFunctions.setMassScaleReferenceSpectrum(referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters, plotControlMass=plotControlMass, testRangeStart=testRangeStart, testRangeEnd=testRangeEnd)
+  #
+  fh = HDF5.h5open(referenceFile,"r")
+  if ("InstrumentType" in keys(HDF5.attrs(fh)))
+    lenMassAxis = length(HDF5.h5read(referenceFile, "SPECdata/AverageSpec"))
+    referenceMassAxis = Array{Float64}(undef,lenMassAxis)  #referenceMassAxis = []
+  else
+    referenceMassAxis = []
+    referenceMassAxis = HDF5.h5read(referenceFile, "FullSpectra/MassAxis")
+  end
+  HDF5.close(fh)
+  #
+  println("Calculating mass axis")
+  for i=1:length(referenceSpectrum) # (referenceMassAxis)
+      referenceMassAxis[i] = APiTOFFunctions.timebin2mass(i, referenceMassScaleMode, referenceMassScaleParameters)
   end
 
   totalAvgSpectrum = Array{Float64}(undef,length(referenceSpectrum))
@@ -114,14 +129,21 @@ function correctMassScaleAndExtractSumSpec(
     totalMaxSpectrum[i] = 0
   end
 
+  mA = [Int32(round(referenceMassAxis[1])) Int32(round(referenceMassAxis[end]))]
+  #println("   mA = $mA")
+  UMRpeakList = Array{Float32}(undef,mA[2]-mA[1])
+  UMRpeakList[1] = mA[1]
+  for i=mA[1]:mA[2]-2
+      UMRpeakList[i-mA[1]+2] =  UMRpeakList[i-mA[1]+1] + (MasslistFunctions.massC+MasslistFunctions.massH)/13
+  end
+  UMRmasses=length(UMRpeakList)
+
   nMasses=length(masslistMasses)
   println("Calculating Stick CPS for $nMasses masses.")
   timebinshifts = zeros(Float64,(length(calibRegions),nFiles))
   intensities = zeros(Float64,(length(calibRegions),nFiles))
   monitorTimetrace = zeros(nFiles)
 
-  #time = SharedArray{DateTime}(undef,nFiles)
-  #stickcps=SharedArray{Float64}(undef,nMasses,nFiles)
   time = Array{DateTime}(undef,nFiles)
   stickcps=Array{Float64}(undef,nMasses,nFiles)
 
@@ -132,7 +154,7 @@ function correctMassScaleAndExtractSumSpec(
   elseif  (massBorderCalculation == 1)
   #mlow = masslistMasses .* resolution./(resolution+0.5)
   #mhigh = masslistMasses .* resolution./(resolution-0.5)
-  massborders = MasslistFunctions.IntegrationBorders(masslistMasses, resolution)
+  massborders = MasslistFunctions.IntegrationBorders(masslistMasses; resolution=resolution)
   end
 
 
@@ -145,8 +167,8 @@ function correctMassScaleAndExtractSumSpec(
   end
 
   ############## Check output path and remove existing files #####################
-  if (!isdir("$filepath/results"))
-    mkdir("$filepath/results")
+  if (!isdir(joinpath(filepath,"results")))
+    mkdir(joinpath(filepath,"results"))
   end
   outfilepath = joinpath(filepath, outputfilename)
   if isfile(outfilepath)
@@ -172,7 +194,10 @@ function correctMassScaleAndExtractSumSpec(
     dspaceStickCps = HDF5.dataspace((1,dsStickCpsWidth)::Dims, max_dims=(typemax(Int64),dsStickCpsWidth))
     dtypeStickCps = HDF5.datatype(Float32)
     dsetStickCps = HDF5.create_dataset(fid, "StickCps", dtypeStickCps, dspaceStickCps; chunk=(1,dsStickCpsWidth), compress=3)
-    dsetStickCpsErr = HDF5.create_dataset(fid, "StickCpsErr", dtypeStickCps, dspaceStickCps, chunk=(1,dsStickCpsWidth), compress=3)
+    dsetStickCpsErr = HDF5.create_dataset(fid, "StickCpsErr", dtypeStickCps, dspaceStickCps; chunk=(1,dsStickCpsWidth), compress=3)
+    dsUMRStickCpsWidth = UMRmasses
+    dspaceUMRStickCps = HDF5.dataspace((1,dsUMRStickCpsWidth)::Dims, max_dims=(typemax(Int64),dsUMRStickCpsWidth))
+    dsetUMRStickCps = HDF5.create_dataset(fid, "UMRStickCps", dtypeStickCps, dspaceUMRStickCps; chunk=(1,dsUMRStickCpsWidth), compress=3)
 
     dspaceTimes = HDF5.dataspace((1,)::Dims, max_dims=(typemax(Int64),))
     dtypeTimes = HDF5.datatype(Float64)
@@ -181,9 +206,11 @@ function correctMassScaleAndExtractSumSpec(
   end
   ################################################################################
   badFiles = Array{String,1}()
-
+  #println("number of files 2: $nFiles")
   for j=1:nFiles
     totalPath = joinpath(filepath, files[j])
+    println("totalpath : $totalPath")
+    fh = HDF5.h5open(totalPath,"r")
     if j < nFiles && filePrecaching
         totalPrecachePath = joinpath(filepath, files[j+1])
     else
@@ -192,18 +219,34 @@ function correctMassScaleAndExtractSumSpec(
     if debuglevel > 0   println("Processing File $j/$nFiles :  $totalPath") end
 
     fileIsBad = false;
-    massAxis = []
-    massAxis = HDF5.h5read(totalPath, "FullSpectra/MassAxis")
+    if ("InstrumentType" in keys(HDF5.attrs(fh)))
+      if haskey(fh,"PROCESSED")
+        massAxis = HDF5.h5read(totalPath, "PROCESSED/AverageSpectrum/MassAxis")
+      else # catch
+        lenMassAxis = length(HDF5.h5read(totalPath, "SPECdata/AverageSpec"))
+        timeBins = vcat(range(1,stop=lenMassAxis,length=lenMassAxis))
+        massAxis = Array{Float32}(undef,length(timeBins))
+        pV = HDF5.h5read(totalPath,"/CALdata/Spectrum")
+        p1 = pV[1,1]
+        p2 = pV[2,1]
+        massAxis = ((timeBins[:].-p2[1])/p1[1]).^2
+      end
+    else
+      massAxis = []
+      massAxis = HDF5.h5read(totalPath, "FullSpectra/MassAxis")
+    end
+    #HDF5.close(fh)
+    time[j] = APiTOFFunctions.getTimeFromFile(totalPath)
 
-    time[j] = TOFFunctions.getTimeFromFile(totalPath)
-
-    avgSpectrum = TOFFunctions.getAvgSpectrumFromFile(totalPath)
-    newParams, success, tbs, ins = TOFFunctions.recalibrateMassScale(avgSpectrum, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
+    avgSpectrum = APiTOFFunctions.getAvgSpectrumFromFile(totalPath)
+    newParams, success, tbs, ins = APiTOFFunctions.recalibrateMassScale(avgSpectrum, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
 
     #if debuglevel > 0   println("Processing File $totalPath") end
     if (createTotalAvg == true && !fileIsBad)
       print("Spectrum interpolation for total average... ")
-      indexesExact = TOFFunctions.mass2timebin(referenceMassAxis, referenceMassScaleMode, newParams)
+      println("New parameters: $(newParams), referenceMassScaleMode: $referenceMassScaleMode")
+      m_MassScaleMode = referenceMassScaleMode # 0 # instead of using m_referenceMassScaleMode
+      indexesExact = APiTOFFunctions.mass2timebin(referenceMassAxis, m_MassScaleMode, newParams) # (referenceMassAxis, referenceMassScaleMode, newParams)
       interpolatedSpectrum = InterpolationFunctions.interpolate(indexesExact,avgSpectrum)
       totalAvgSpectrum += interpolatedSpectrum
       # calculate min and max spectra
@@ -229,17 +272,18 @@ function correctMassScaleAndExtractSumSpec(
     if debuglevel > 1   println() end
     print("Average Stick integration... ")
     for i=(1:nMasses)
-      #if debuglevel > 0   println("Processing region mass($(mlow[i]):$(mhigh[i])) --> timebin($(round(TOFFunctions.mass2timebin(mlow[i],massCalibMode,newParams))):$(round(TOFFunctions.mass2timebin(mhigh[i],massCalibMode,newParams))))") end
+      #if debuglevel > 0   println("Processing region mass($(mlow[i]):$(mhigh[i])) --> timebin($(round(APiTOFFunctions.mass2timebin(mlow[i],massCalibMode,newParams))):$(round(APiTOFFunctions.mass2timebin(mhigh[i],massCalibMode,newParams))))") end
       if (massBorderCalculation == 2)
-        centerIndex = Int64(floor(TOFFunctions.mass2timebin(masslistMasses[i], referenceMassScaleMode, newParams)))
+        centerIndex = Int64(floor(APiTOFFunctions.mass2timebin(masslistMasses[i], referenceMassScaleMode, newParams)))
         if ((centerIndex-binWidth) > 0) && ((centerIndex+binWidth)<length(avgSpectrum))
           raw = sum(view(avgSpectrum, (centerIndex-binWidth : centerIndex + binWidth)))
         else
           raw = 0
         end
       else
-        subIdxStartExact=TOFFunctions.mass2timebin(massborders.lowMass[i],referenceMassScaleMode,newParams)
-        subIdxEndExact = TOFFunctions.mass2timebin(massborders.highMass[i],referenceMassScaleMode,newParams)
+        m_MassScaleMode = referenceMassScaleMode # 0 # instead of using referenceMassScaleMode
+        subIdxStartExact=APiTOFFunctions.mass2timebin(massborders.lowMass[i],m_MassScaleMode,newParams) # (massborders.lowMass[i],referenceMassScaleMode,newParams)
+        subIdxEndExact = APiTOFFunctions.mass2timebin(massborders.highMass[i],m_MassScaleMode,newParams)
         raw = InterpolationFunctions.interpolatedSum(subIdxStartExact,subIdxEndExact,avgSpectrum)
       end
       stickcps[i,j] = raw
@@ -248,14 +292,16 @@ function correctMassScaleAndExtractSumSpec(
     if (!onlyUseAverages)
       fileInternalLocalAvg = 0 #clear big data and references for garbage collection
       GC.gc()
-      spectrumMultFactor = TOFFunctions.getSpecMultiplicator(totalPath)
+      spectrumMultFactor = APiTOFFunctions.getSpecMultiplicator(totalPath)
       println("   spectrumMultFactor = $spectrumMultFactor")
       #subSpecStickCps = SharedArray{Float32}(undef,nMasses)
       subSpecStickCps = Array{Float32}(undef,nMasses)
-      totalSubSpectra = TOFFunctions.getSubSpectraCount(totalPath)
+      totalSubSpectra = APiTOFFunctions.getSubSpectraCount(totalPath)
+      println("   getSubSpectraCount ... check")
+      UMRsubSpecStickCps = Array{Float32}(undef,length(UMRpeakList))
 
       ################## prepare arrays for averaging #########################
-      fileInternalLocalAvg = TOFFunctions.getSubSpectrumFromFile(totalPath,1, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
+      fileInternalLocalAvg = APiTOFFunctions.getSubSpectrumFromFile(totalPath,1, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
       if fileInternalLocalAvg == 0 # Skip file if the spectra could not be loaded
         println("Error: Could not load Subspectra from file $totalPath, skipping whole file!")
         continue
@@ -269,13 +315,14 @@ function correctMassScaleAndExtractSumSpec(
       fileInternalLocalAvgCount = 0
       print("Precalculating average for mass scale correction... ")
       ################## Get First Set of Spectra for first mass scale calib
-      if totalSubSpectra >= recalibInterval
+      if (dynamicMassScaleCorrection & (totalSubSpectra >= recalibInterval))
         # Prepare first calib beforehead
-        fileInternalLocalAvg = TOFFunctions.getSubSpectrumFromFile(totalPath,1, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
+        fileInternalLocalAvg = APiTOFFunctions.getSubSpectrumFromFile(totalPath,1, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
         for avgIdx=2:minimum([recalibInterval totalSubSpectra])
-          fileInternalLocalAvg += TOFFunctions.getSubSpectrumFromFile(totalPath,avgIdx, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
+          fileInternalLocalAvg += APiTOFFunctions.getSubSpectrumFromFile(totalPath,avgIdx, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
         end
-        newParams, success, tbs, ins = TOFFunctions.recalibrateMassScale(fileInternalLocalAvg, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
+        newParams, success, tbs, ins = APiTOFFunctions.recalibrateMassScale(fileInternalLocalAvg, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
+        # (fileInternalLocalAvg, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
         ######
         fill!(fileInternalLocalAvg,0)
         fileInternalLocalAvgCount = 0
@@ -287,15 +334,15 @@ function correctMassScaleAndExtractSumSpec(
       print("Recalibrating at: ")
       specCount += totalSubSpectra
       for subSpecIdx=1:totalSubSpectra
-        subSpectrum = TOFFunctions.getSubSpectrumFromFile(totalPath,subSpecIdx, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
+        subSpectrum = APiTOFFunctions.getSubSpectrumFromFile(totalPath,subSpecIdx, preloadFile=totalPrecachePath, openWholeFile = openWholeFile)
         fileInternalLocalAvg += subSpectrum
         fileInternalLocalAvgCount += 1
 
-        if (fileInternalLocalAvgCount > recalibInterval) || fileInternalLocalAvgCount == totalSubSpectra
+        if (dynamicMassScaleCorrection & ((fileInternalLocalAvgCount > recalibInterval) || (fileInternalLocalAvgCount == totalSubSpectra)))
           print("$subSpecIdx...")
-          newParams, success, tbs, ins = TOFFunctions.recalibrateMassScale(fileInternalLocalAvg, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
+          newParams, success, tbs, ins = APiTOFFunctions.recalibrateMassScale(fileInternalLocalAvg, referenceSpectrum, calibRegions, searchWidth, referenceMassScaleMode, referenceMassScaleParameters)
 
-          indexesExact = TOFFunctions.mass2timebin(referenceMassAxis, referenceMassScaleMode, newParams)
+          indexesExact = APiTOFFunctions.mass2timebin(referenceMassAxis, referenceMassScaleMode, newParams)
           interpolatedSpectrum = InterpolationFunctions.interpolate(indexesExact,fileInternalLocalAvg)
 
           totalAvgSubSpectrum += interpolatedSpectrum*spectrumMultFactor
@@ -305,14 +352,14 @@ function correctMassScaleAndExtractSumSpec(
         end
         ################## Peak Integration ################################
         #@sync @parallel
-        mbIndicesLowMass = TOFFunctions.mass2timebin(massborders.lowMass,referenceMassScaleMode,newParams)
-        mbIndicesHighMass = TOFFunctions.mass2timebin(massborders.highMass,referenceMassScaleMode,newParams)
+        mbIndicesLowMass = APiTOFFunctions.mass2timebin(massborders.lowMass,referenceMassScaleMode,newParams)
+        mbIndicesHighMass = APiTOFFunctions.mass2timebin(massborders.highMass,referenceMassScaleMode,newParams)
         Threads.@threads for i=(1:nMasses)
           if (mod(i,100) == 0)
             #println("Processing mass $(masslistMasses[i])")
           end
           if (massBorderCalculation == 2)
-            centerIndex = Int64(floor(TOFFunctions.mass2timebin(masslistMasses[i], referenceMassScaleMode, newParams)))
+            centerIndex = Int64(floor(APiTOFFunctions.mass2timebin(masslistMasses[i], referenceMassScaleMode, newParams)))
             if ((centerIndex-binWidth) > 0) && ((centerIndex+binWidth)<length(avgSpectrum))
               raw = sum(view(subSpectrum, (centerIndex-binWidth : centerIndex + binWidth)))
             else
@@ -320,15 +367,46 @@ function correctMassScaleAndExtractSumSpec(
             end
             subSpecStickCps[i]=raw
           else
-            #if debuglevel > 0   println("Processing region mass($(mlow[i]):$(mhigh[i])) --> timebin($(round(TOFFunctions.mass2timebin(mlow[i],massCalibMode,newParams))):$(round(TOFFunctions.mass2timebin(mhigh[i],massCalibMode,newParams))))") end
+            #if debuglevel > 0   println("Processing region mass($(mlow[i]):$(mhigh[i])) --> timebin($(round(APiTOFFunctions.mass2timebin(mlow[i],massCalibMode,newParams))):$(round(APiTOFFunctions.mass2timebin(mhigh[i],massCalibMode,newParams))))") end
             subSpecStickCps[i]= InterpolationFunctions.interpolatedSum(mbIndicesLowMass[i],mbIndicesHighMass[i],subSpectrum)
           end
+
         end
-        rawTime = TOFFunctions.getSubSpectrumTimeFromFile(totalPath,subSpecIdx)
+        ################## unit mass resolution (UMR) Peak Creation ################################
+        if UMRpeaks == true
+          umrMlow = UMRpeakList .- UMRmassLow
+          umrMhigh = UMRpeakList .+ UMRmassHigh
+          umrIndicesLowMass = APiTOFFunctions.mass2timebin(umrMlow,referenceMassScaleMode,newParams)
+          umrIndicesHighMass = APiTOFFunctions.mass2timebin(umrMhigh,referenceMassScaleMode,newParams)
+          Threads.@threads for i=(1:length(UMRpeakList))
+            if (massBorderCalculation == 1)
+              umrCenterIndex = Int64(floor(APiTOFFunctions.mass2timebin(UMRpeakList[i], referenceMassScaleMode, newParams)))
+              if ((umrCenterIndex-umrBinWidth) > 0) && ((umrCenterIndex+umrBinWidth)<length(avgSpectrum))
+                umrRaw = sum(view(subSpectrum, (umrCenterIndex-umrBinWidth : umrCenterIndex + umrBinWidth)))
+              else
+                umrRaw = 0
+              end
+              UMRsubSpecStickCps[i]=umrRaw
+              #println(" UMRsubSpecStickCps sum-view: $(sum(UMRsubSpecStickCps))")
+            else
+              #umrCenterIndex = Int64(floor(APiTOFFunctions.mass2timebin(UMRpeakList[i], referenceMassScaleMode, newParams)))
+              UMRsubSpecStickCps[i] = InterpolationFunctions.interpolatedSum(umrIndicesLowMass[i],umrIndicesHighMass[i],subSpectrum)
+              #println(" UMRsubSpecStickCps interpolatedSum: $(sum(UMRsubSpecStickCps))")
+            end
+          end
+        end
+        ###
+        #println(" UMRsubSpecStickCps size: $(size(UMRsubSpecStickCps))")
+        #println(" subSpecStickCps size: $(size(subSpecStickCps))")
+
+        rawTime = APiTOFFunctions.getSubSpectrumTimeFromFile(totalPath,subSpecIdx)
         currDimsTime = size(dsetTimes)[1]
-        absTimeOfCurrSample = Dates.datetime2unix(time[j]) + rawTime
+        absTimeOfCurrSample = Dates.datetime2unix(time[j]) + rawTime[1]
         dsetTimes[currDimsTime] = absTimeOfCurrSample
         dsetStickCps[currDimsTime,:] = subSpecStickCps*spectrumMultFactor
+        if UMRpeaks == true
+          dsetUMRStickCps[currDimsTime,:] = UMRsubSpecStickCps*spectrumMultFactor # UMR
+        end
         if (currDimsTime == 1)
           deltaT = 5 #rawTime # Not correct???
         else
@@ -336,10 +414,11 @@ function correctMassScaleAndExtractSumSpec(
         end
         #println("DeltaT: $deltaT")
         dsetStickCpsErr[currDimsTime,:] = sqrt.(abs.(subSpecStickCps./deltaT))
-        if !((j==nFiles) && (subSpecIdx== TOFFunctions.getSubSpectraCount(totalPath)))
+        if !((j==nFiles) && (subSpecIdx== APiTOFFunctions.getSubSpectraCount(totalPath)))
           HDF5.set_extent_dims(dsetTimes, (currDimsTime+1,)::Dims)
           HDF5.set_extent_dims(dsetStickCps, (currDimsTime+1,dsStickCpsWidth)::Dims)
           HDF5.set_extent_dims(dsetStickCpsErr, (currDimsTime+1,dsStickCpsWidth)::Dims)
+          HDF5.set_extent_dims(dsetUMRStickCps, (currDimsTime+1,dsUMRStickCpsWidth)::Dims)
         end
       end
       println("DONE")
@@ -384,11 +463,12 @@ function correctMassScaleAndExtractSumSpec(
   HDF5.h5write(outfilepath, "MassListIntegrationBordersLow", massborders.lowMass)
   HDF5.h5write(outfilepath, "MassListIntegrationBordersHigh", massborders.highMass)
 
-  HDF5.h5write(outfilepath, "MassListIdx", TOFFunctions.mass2timebin(masslistMasses, referenceMassScaleMode, referenceMassScaleParameters))
-  HDF5.h5write(outfilepath, "MassListIntegrationBordersIdxLow", TOFFunctions.mass2timebin(massborders.lowMass, referenceMassScaleMode, referenceMassScaleParameters))
-  HDF5.h5write(outfilepath, "MassListIntegrationBordersIdxHigh", TOFFunctions.mass2timebin(massborders.highMass, referenceMassScaleMode, referenceMassScaleParameters))
+  HDF5.h5write(outfilepath, "MassListIdx", APiTOFFunctions.mass2timebin(masslistMasses, referenceMassScaleMode, referenceMassScaleParameters))
+  HDF5.h5write(outfilepath, "MassListIntegrationBordersIdxLow", APiTOFFunctions.mass2timebin(massborders.lowMass, referenceMassScaleMode, referenceMassScaleParameters))
+  HDF5.h5write(outfilepath, "MassListIntegrationBordersIdxHigh", APiTOFFunctions.mass2timebin(massborders.highMass, referenceMassScaleMode, referenceMassScaleParameters))
   HDF5.h5write(outfilepath, "MassCalibMode", referenceMassScaleMode)
   HDF5.h5write(outfilepath, "MassCalibParameters", referenceMassScaleParameters)
+  HDF5.h5write(outfilepath, "UMRpeakList", UMRpeakList)
 
   HDF5.h5write(outfilepath, "AvgStickCpsTimes", timeFlat)
   HDF5.h5write(outfilepath, "MassAxis", referenceMassAxis)
@@ -399,6 +479,7 @@ function correctMassScaleAndExtractSumSpec(
   end
 
   if (createTotalAvg == true)
+    #HDF5.h5write(outfilepath, "SumSpecs", sdata(interpolatedSpectra))
     HDF5.h5write(outfilepath, "SumSpecMax", totalMaxSpectrum)
     HDF5.h5write(outfilepath, "SumSpecMin", totalMinSpectrum)
   end
@@ -407,8 +488,5 @@ function correctMassScaleAndExtractSumSpec(
   compFlat = Array{Int64}(undef,length(masslistCompositions[1]),length(masslistCompositions))
   [compFlat[:,i]=masslistCompositions[i] for i=1:length(masslistCompositions)]
   HDF5.h5write(outfilepath, "ElementalCompositions", compFlat)
-
-  ###### free some mem #######
-  TOFFunctions.clearCache()
 
 end

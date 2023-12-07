@@ -5,8 +5,8 @@ using PyPlot, Colors
 using Statistics
 ###
 # path
-file = "path\\to\\file.h5"
-filesavepath = "path\\to\\save\\file\\"
+file = joinpath("path","to","file.h5")
+filesavepath = joinpath("path","to","resultfile.h5")
 # loading raw data
 avgSpectrum = HDF5.h5read(file, "SPECdata/AverageSpec")
 timebins = Array{Float64}(undef,length(avgSpectrum),1)

@@ -1,4 +1,5 @@
-@everywhere module DatasetPreloader
+
+module DatasetPreloader
 	using HDF5
 	using Distributed
 	export preload, load, getPreloadFileName
