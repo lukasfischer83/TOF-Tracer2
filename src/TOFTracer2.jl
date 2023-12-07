@@ -5,7 +5,7 @@ using Dates
 using DelimitedFiles
 using PyPlot
 
-export correctMassScaleAndExtractSumSpec, baselineAndPeakshape, deconvolute, ResultFileFunctions, MasslistFunctions, PlotFunctions, InterpolationFunctions, massLibrary
+export correctMassScaleAndExtractSumSpec, correctMassScaleAndExtractSumSpecAPi, baselineAndPeakshape, deconvolute, ResultFileFunctions, MasslistFunctions, PlotFunctions, InterpolationFunctions, massLibrary
 
 if (nprocs() < 2 && isdefined(Main, :usePrecaching) && usePrecaching)
     println("Adding process for file precaching!")
@@ -25,8 +25,9 @@ if ! isdefined(Main, :FunctionsLoaded)
     include(joinpath("includes","TofFunctions.jl"))
     include(joinpath("includes","MultipeakFunctions.jl"))
     include(joinpath("includes","ResultFileFunctions.jl"))
-    #misc module leftovers
-    include(joinpath("includes","TofTracer.jl"))
+    include(joinpath("includes","PlotFunctions.jl"))
+    include(joinpath("includes","ExportFunctions.jl"))
+    include(joinpath("includes","CalibrationFunctions.jl"))
 
     #Load Personal MassLibrary Definitions
     include(joinpath("includes","manualMassLibrary.jl"))
